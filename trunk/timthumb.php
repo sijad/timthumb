@@ -1,8 +1,9 @@
 <?php
 
 // TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks for the Mimbo Pro theme
-// May be re-used pending permission of the authors, email cutout@gmail.com
+// May be re-used with credit left intact
 // Copyright 2008
+// http://code.google.com/p/timthumb/
 
 /* request parameters that can be sent to this script */
 
