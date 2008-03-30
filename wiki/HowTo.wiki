@@ -1,8 +1,9 @@
+#labels Phase-Deploy
 #A brief description on usage of TimThumb
 
 = Introduction =
 
-How to install and use TimThum
+How to install and use TimThumb
 
 
 = Details =
