@@ -1,0 +1,18 @@
+#A brief description on usage of TimThumb
+
+= Introduction =
+
+How to install and use TimThum
+
+
+= Details =
+
+TimThumb should be uploaded to a folder on your site. Any folder is fine. In the folder holding TimThumb create a cache folder and give it the permissions 777. This folder will hold the image cache.
+
+Access the file with the following parameters...
+
+* src: location of file from doc root
+* w: width
+* h: height
+* zc: zoom crop (0 or 1)
+* q: quality (default is 75 and max is 100)
