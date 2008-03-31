@@ -14,7 +14,7 @@
 // q: quality (default is 75 and max is 100)
 
 // either width or height can be used
-// example: <img src="/resizeImage.php?src=images/image.jpg&h=150" alt="some image" />
+// example: <img src="/scripts/timthumb.php?src=images/image.jpg&w=150&h=150&zc=1" alt="" />
 	
 	
 if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
