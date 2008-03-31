@@ -5,11 +5,15 @@ TimThumb.php can be placed in any folder on your site. Upon install, it will aut
 
 TimThumb allows the following parameters:
 
-*src: location of file from doc root
-*w: width
-*h: height
-*zc: zoom crop (0 or 1)
-*q: quality (default is 75 and max is 100)
+*  src: location of file from doc root
+
+*  w: width
+
+*  h: height
+
+*  zc: zoom crop (0 or 1)
+
+*  q: quality (default is 75 and max is 100)
 
 
 = Sample Code =
