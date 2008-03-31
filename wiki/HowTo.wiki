@@ -3,14 +3,15 @@
 
 TimThumb.php can be placed in any folder on your site. Upon install, it will automatically create a /cache/ subfolder which must be writable by the server. If your host server doesn't allow this by default, be sure to manually change the /cache/ folder permissions to 777.
 
-TimThumb allows the following parameters...
+TimThumb allows the following parameters:
 
-* src: location of file from doc root
-* w: width
-* h: height
-* zc: zoom crop (0 or 1)
-* q: quality (default is 75 and max is 100)
+- src: location of file from doc root
+- w: width
+- h: height
+- zc: zoom crop (0 or 1)
+- q: quality (default is 75 and max is 100)
 
-Sample code:
 
-<img src="/scripts/timthumb.php?src=/images/image.jpg&h=150&h=150&zc=1" alt="" />
+= Sample Code =
+
+<img src="/scripts/timthumb.php?src=/images/image.jpg&h=150&w=150&zc=1" alt="" />
