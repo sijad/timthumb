@@ -8,7 +8,7 @@ How to install and use TimThumb
 
 = Details =
 
-TimThumb should be uploaded to a folder on your site. Any folder is fine. In the folder holding TimThumb create a cache folder and give it the permissions 777. This folder will hold the image cache.
+TimThumb can be uploaded to any folder on your site. Upon install, it will automatically create a /cache/ folder which must be writable by the server. If your host server doesn't allow this by default, be sure to change the /cache/ folder permissions to 777.
 
 Access the file with the following parameters...
 
