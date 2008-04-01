@@ -1,11 +1,11 @@
 <?php
 
 // TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks for the Mimbo Pro theme
-// May be re-used with credit left intact
+// May be re-used with credits left intact
 // Copyright 2008
 // http://code.google.com/p/timthumb/
 
-/* request parameters that can be sent to this script */
+/* Parameters allowed: */
 
 // src: location of file from doc root
 // w: width
@@ -13,8 +13,7 @@
 // zc: zoom crop (0 or 1)
 // q: quality (default is 75 and max is 100)
 
-// either width or height can be used
-// example: <img src="/scripts/timthumb.php?src=images/image.jpg&w=150&h=150&zc=1" alt="" />
+// HTML example: <img src="/scripts/timthumb.php?src=/images/image.jpg&w=150&h=200&zc=1" alt="" />
 	
 	
 if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
