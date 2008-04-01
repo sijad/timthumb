@@ -199,8 +199,6 @@ function valid_src_mime_type ($mime_type) {
 
 function check_cache ($cache_dir) {
 
-	return;
-
 	// make sure cache dir exists
 	if(!file_exists($cache_dir)) {
 		// give 777 permissions so that developer can overwrite
