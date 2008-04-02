@@ -1,12 +1,5 @@
 <?php
 
-/*
-foreach($_SERVER as $key => $val) {
-	echo "$key : $val <br/>";
-}
-exit;
-*/
-
 // TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks for the Mimbo Pro theme
 // May be re-used with credits left intact
 // Copyright 2008
@@ -232,7 +225,7 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 		$gmdate_mod .= " GMT";
 	}
 
-	error_log("TimThumb: $gmdate_mod == $if_modified_since");
+	//error_log("TimThumb: $gmdate_mod == $if_modified_since");
 
 	if ( $if_modified_since == $gmdate_mod ) {
 		header( "HTTP/1.1 304 Not Modified" );
