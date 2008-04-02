@@ -1,5 +1,12 @@
 <?php
 
+/*
+foreach($_SERVER as $key => $val) {
+	echo "$key : $val <br/>";
+}
+exit;
+*/
+
 // TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks for the Mimbo Pro theme
 // May be re-used with credits left intact
 // Copyright 2008
@@ -186,7 +193,6 @@ function mime_type ($file) {
  		'xml'  => 'text/xml',
  		'html' => 'text/html'
  	);
-	//echo "extension = " .$ext;
 	$mime_type = $types[$ext];
 	if(!strlen($mime_type)) { $mime_type = 'unknown'; }
 	return($mime_type);
@@ -220,14 +226,17 @@ function show_cache_file ( $cache_dir, $mime_type ) {
     if( file_exists( $cache_dir . '/' . $cache_file ) ) {
     
     	// check for updates
-	$gmdate_mod = gmdate('D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) ) . " GMT";	
-	if ( isset( $_SERVER['HTTP_IF_MODIFIED_SINCE' ] ) ) {
-		$if_modified_since = preg_replace( "/;.*$/", "", $_SERVER[ "HTTP_IF_MODIFIED_SINCE" ] );
-		if ( $if_modified_since >= $gmdate_mod ) {
-			header( "HTTP/1.1 304 Not Modified" );
-			exit;
-		}
+	$if_modified_since = preg_replace('/;.*$/', '', $_SERVER[ "HTTP_IF_MODIFIED_SINCE" ]);
+	$gmdate_mod = gmdate('D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) );
+	if(strstr($gmdate_mod, 'GMT')) {
+		$gmdate_mod .= " GMT";
+	}
 
+	error_log("TimThumb: $gmdate_mod == $if_modified_since");
+
+	if ( $if_modified_since == $gmdate_mod ) {
+		header( "HTTP/1.1 304 Not Modified" );
+		exit;
 	}
 		
     	// send headers then display image
@@ -235,7 +244,7 @@ function show_cache_file ( $cache_dir, $mime_type ) {
     	header( "Last-Modified: " . gmdate('D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) . " GMT" ) );
     	header( "Content-Length: " . filesize( $cache_dir . '/' . $cache_file ) );
     	header( "Cache-Control: max-age=9999, must-revalidate" );
-    	header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT"); 
+    	header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT" ); 
     	readfile( $cache_dir . '/' . $cache_file );
 	exit;
 
