@@ -7,13 +7,12 @@
 
 /* Parameters allowed: */
 
-// src: location of file from doc root
 // w: width
 // h: height
 // zc: zoom crop (0 or 1)
 // q: quality (default is 75 and max is 100)
 
-// HTML example: <img src="/scripts/timthumb.php?src=/images/image.jpg&w=150&h=200&zc=1" alt="" />
+// HTML example: <img src="/scripts/timthumb.php?src=/images/whatever.jpg&w=150&h=200&zc=1" alt="" />
 	
 if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
 
