@@ -1,9 +1,9 @@
 <?php
 
 // TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks for the Mimbo Pro theme
-// May be re-used with credits left intact
-// Copyright 2008
 // http://code.google.com/p/timthumb/
+
+// MIT License: http://www.opensource.org/licenses/mit-license.php
 
 /* Parameters allowed: */
 
