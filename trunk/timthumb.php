@@ -1,6 +1,6 @@
 <?php
 
-// TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks for the Mimbo Pro theme
+// TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks
 // http://code.google.com/p/timthumb/
 
 // MIT License: http://www.opensource.org/licenses/mit-license.php
