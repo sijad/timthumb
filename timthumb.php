@@ -17,11 +17,15 @@
 if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
 
 // clean params before use
-$src = preg_replace( "/^(\.+(\/|))+/", "", $_REQUEST['src'] );
+$src = $_REQUEST['src'];
+// possibles?
+//$src = preg_replace( "/^(\.+(\/|))+/", "", $src );
+//$src = str_replace( "../", "", $src );
+$src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
 $src = preg_replace( '/^(s?f|ht)tps?:\/\/[^\/]+/i', '', $src );
-$new_width = preg_replace( "/[^0-9]/", "", $_REQUEST[ 'w' ] );
-$new_height = preg_replace( "/[^0-9]/", "", $_REQUEST[ 'h' ] );
-$zoom_crop = preg_replace( "/[^0-9]/", "", $_REQUEST[ 'zc' ] );
+$new_width = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'w' ] );
+$new_height = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'h' ] );
+$zoom_crop = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'zc' ] );
 
 if( !isset( $_REQUEST['q'] ) ) { $quality = 80; } else { $quality = preg_replace("/[^0-9]/", "", $_REQUEST['q'] ); }
 
@@ -170,9 +174,9 @@ function open_image ($mime_type, $src) {
 
 }
 
-function mime_type ($file) {
+function mime_type( $file ) {
 
-	$frags = split("\.", $file);
+	$frags = split( "\.", $file );
 	$ext = strtolower( $frags[ count( $frags ) - 1 ] );
 	$types = array(
  		'jpg'  => 'image/jpeg',
@@ -185,9 +189,9 @@ function mime_type ($file) {
  		'xml'  => 'text/xml',
  		'html' => 'text/html'
  	);
-	$mime_type = $types[$ext];
-	if(!strlen($mime_type)) { $mime_type = 'unknown'; }
-	return($mime_type);
+	$mime_type = $types[ $ext ];
+	if( !strlen( $mime_type ) ) { $mime_type = 'unknown'; }
+	return $mime_type;
 	
 }
 
@@ -201,12 +205,13 @@ function valid_src_mime_type ( $mime_type ) {
 function check_cache ( $cache_dir, $mime_type ) {
 
 	// make sure cache dir exists
-	if(!file_exists($cache_dir)) {
+	if( !file_exists( $cache_dir ) ) {
 		// give 777 permissions so that developer can overwrite
 		// files created by web server user
 		mkdir( $cache_dir );
 		chmod( $cache_dir, 0777 );
 	}
+	
 	show_cache_file( $cache_dir, $mime_type );
 
 }
@@ -218,27 +223,27 @@ function show_cache_file ( $cache_dir, $mime_type ) {
     if( file_exists( $cache_dir . '/' . $cache_file ) ) {
     
     	// check for updates
-	$if_modified_since = preg_replace('/;.*$/', '', $_SERVER[ "HTTP_IF_MODIFIED_SINCE" ]);
-	$gmdate_mod = gmdate('D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) );
-	if(strstr($gmdate_mod, 'GMT')) {
-		$gmdate_mod .= " GMT";
-	}
-
-	//error_log("TimThumb: $gmdate_mod == $if_modified_since");
-
-	if ( $if_modified_since == $gmdate_mod ) {
-		header( "HTTP/1.1 304 Not Modified" );
-		exit;
-	}
+		$if_modified_since = preg_replace( '/;.*$/', '', $_SERVER[ "HTTP_IF_MODIFIED_SINCE" ] );
+		$gmdate_mod = gmdate( 'D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) );
+		if( strstr( $gmdate_mod, 'GMT' ) ) {
+			$gmdate_mod .= " GMT";
+		}
+	
+		//error_log("TimThumb: $gmdate_mod == $if_modified_since");
+	
+		if ( $if_modified_since == $gmdate_mod ) {
+			header( "HTTP/1.1 304 Not Modified" );
+			exit;
+		}
 		
     	// send headers then display image
     	header( "Content-Type: " . $mime_type );
-    	header( "Last-Modified: " . gmdate('D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) . " GMT" ) );
+    	header( "Last-Modified: " . gmdate( 'D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) . " GMT" ) );
     	header( "Content-Length: " . filesize( $cache_dir . '/' . $cache_file ) );
     	header( "Cache-Control: max-age=9999, must-revalidate" );
     	header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT" ); 
     	readfile( $cache_dir . '/' . $cache_file );
-	exit;
+		exit;
 
     }
     
