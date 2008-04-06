@@ -21,8 +21,9 @@ $src = $_REQUEST['src'];
 // possibles?
 //$src = preg_replace( "/^(\.+(\/|))+/", "", $src );
 //$src = str_replace( "../", "", $src );
+//$src = preg_replace( '/^(s?f|ht)tps?:\/\/[^\/]+/i', '', $src );
 $src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
-$src = preg_replace( '/^(s?f|ht)tps?:\/\/[^\/]+/i', '', $src );
+$src = preg_replace( '/^\w+:\/\/[^\/]+/', '', $src );
 $new_width = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'w' ] );
 $new_height = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'h' ] );
 $zoom_crop = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'zc' ] );
