@@ -120,7 +120,7 @@ if(strlen($src) && file_exists( $src ) ) {
 	show_image( $mime_type, $canvas, $quality, $cache_dir );
 	
 	// remove image from memory
-	ImageDestroy( $canvas );
+	imagedestroy( $canvas );
 	
 } else {
 
@@ -235,11 +235,11 @@ function check_cache ( $cache_dir, $mime_type ) {
 
 function show_cache_file ( $cache_dir, $mime_type ) {
 
-    $cache_file = get_cache_file();
+	$cache_file = get_cache_file();
     
-    if( file_exists( $cache_dir . '/' . $cache_file ) ) {
+	if( file_exists( $cache_dir . '/' . $cache_file ) ) {
     
-    	// check for updates
+		// check for updates
 		$if_modified_since = preg_replace( '/;.*$/', '', $_SERVER[ "HTTP_IF_MODIFIED_SINCE" ] );
 		$gmdate_mod = gmdate( 'D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) );
 		if( strstr( $gmdate_mod, 'GMT' ) ) {
@@ -253,16 +253,16 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 			exit;
 		}
 		
-    	// send headers then display image
-    	header( "Content-Type: " . $mime_type );
-    	header( "Last-Modified: " . gmdate( 'D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) . " GMT" ) );
-    	header( "Content-Length: " . filesize( $cache_dir . '/' . $cache_file ) );
-    	header( "Cache-Control: max-age=9999, must-revalidate" );
-    	header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT" ); 
-    	readfile( $cache_dir . '/' . $cache_file );
+		// send headers then display image
+		header( "Content-Type: " . $mime_type );
+		header( "Last-Modified: " . gmdate( 'D, d M Y H:i:s', filemtime( $cache_dir . '/' . $cache_file ) . " GMT" ) );
+		header( "Content-Length: " . filesize( $cache_dir . '/' . $cache_file ) );
+		header( "Cache-Control: max-age=9999, must-revalidate" );
+		header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT" ); 
+		readfile( $cache_dir . '/' . $cache_file );
 		exit;
 
-    }
+	}
     
 }
 
