@@ -17,13 +17,14 @@
 if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
 
 // clean params before use
-$src = $_REQUEST['src'];
-// possibles?
-//$src = preg_replace( "/^(\.+(\/|))+/", "", $src );
-//$src = str_replace( "../", "", $src );
-//$src = preg_replace( '/^(s?f|ht)tps?:\/\/[^\/]+/i', '', $src );
-$src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
-$src = preg_replace( '/^\w+:\/\/[^\/]+/', '', $src );
+$src = clean_source( $_REQUEST[ "src" ] );
+
+// set document root
+$doc_root = $_SERVER['DOCUMENT_ROOT'];
+                        
+// get path to image on file system
+$src = $doc_root . '/' . $src;
+
 $new_width = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'w' ] );
 $new_height = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'h' ] );
 $zoom_crop = preg_replace( "/[^0-9]+/", "", $_REQUEST[ 'zc' ] );
@@ -52,12 +53,6 @@ if(!function_exists('imagecreatetruecolor')) {
 	die( $error );
 }
 
-// set document root
-$doc_root = $_SERVER['DOCUMENT_ROOT'];
-
-// get path to image on file system 
-$src = $doc_root . '/' . $src;
-
 if(strlen($src) && file_exists( $src ) ) {
 
 	// open the existing image
@@ -67,6 +62,10 @@ if(strlen($src) && file_exists( $src ) ) {
 	// Get original width and height
 	$width = imagesx($image);
 	$height = imagesy($image);
+
+	// don't allow new width or height to be greater than the original
+	if( $new_width > $width ) { $new_width = $width; }
+	if( $new_height > $height ) { $new_height = $height; }
 
 	// generate new w/h if not provided
 	if($new_width && !$new_height) {
@@ -129,7 +128,7 @@ if(strlen($src) && file_exists( $src ) ) {
 	
 }
 
-function show_image ($mime_type, $image_resized, $quality, $cache_dir) {
+function show_image ( $mime_type, $image_resized, $quality, $cache_dir ) {
 
 	// check to see if we can write to the cache directory
 	$is_writable = 0;
@@ -160,7 +159,7 @@ function show_image ($mime_type, $image_resized, $quality, $cache_dir) {
 
 }
 
-function open_image ($mime_type, $src) {
+function open_image ( $mime_type, $src ) {
 
 	if(stristr($mime_type, 'gif')) {
 		$image = imagecreatefromgif($src);
@@ -175,25 +174,42 @@ function open_image ($mime_type, $src) {
 
 }
 
-function mime_type( $file ) {
+function mime_type ( $file ) {
 
-	$frags = split( "\.", $file );
-	$ext = strtolower( $frags[ count( $frags ) - 1 ] );
-	$types = array(
- 		'jpg'  => 'image/jpeg',
- 		'jpeg' => 'image/jpeg',
- 		'png'  => 'image/png',
- 		'gif'  => 'image/gif',
- 		'bmp'  => 'image/bmp', 
- 		'doc'  => 'application/msword',
- 		'xls'  => 'application/msword',
- 		'xml'  => 'text/xml',
- 		'html' => 'text/html'
- 	);
-	$mime_type = $types[ $ext ];
-	if( !strlen( $mime_type ) ) { $mime_type = 'unknown'; }
+	// try to determine mime type by using unix file command
+	// if that was not successful, use the file's extension
+
+	// this is from find's man page:
+	// There  has  been  a  file command in every UNIX since at least Research
+	// Version 4 (man page dated November, 1973).
+
+        $os = `uname -a`;
+	$mime_type = '';
+
+        if(preg_match("/freebsd|linux/i", $os)) {
+		//error_log( "TimThumb: os/file test" );
+                $mime_type = trim ( `file -bi $file` );
+        }
+        if(!strlen($mime_type)) {
+		//error_log( "TimThumb: extension test" );
+		$frags = split( '.', $file );
+		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
+		$types = array(
+ 			'jpg'  => 'image/jpeg',
+ 			'jpeg' => 'image/jpeg',
+ 			'png'  => 'image/png',
+ 			'gif'  => 'image/gif',
+ 			'bmp'  => 'image/bmp', 
+ 			'doc'  => 'application/msword',
+ 			'xls'  => 'application/msword',
+ 			'xml'  => 'text/xml',
+ 			'html' => 'text/html'
+ 		);
+		$mime_type = $types[ $ext ];
+		if( !strlen( $mime_type ) ) { $mime_type = 'unknown'; }
+	}
 	return $mime_type;
-	
+
 }
 
 function valid_src_mime_type ( $mime_type ) {
@@ -256,6 +272,29 @@ function get_cache_file () {
 	$cachename = $_REQUEST['src'] . $_REQUEST['w'] . $_REQUEST['h'] . $_REQUEST['zc'] . $_REQUEST['q'];
 	$cache_file = md5( $cachename );
 	return $cache_file;
+
+}
+
+function clean_source ( $src ) {
+
+	// don't allow off site src to be specified via http/https/ftp
+	if(preg_match("/^((ht|f)tp(s|):\/\/)/", $src)) {
+		die("Improper src specified:" . $src);
+	}
+
+	//$src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
+	//$src = preg_replace( '/^\w+:\/\/[^\/]+/', '', $src );
+
+	// don't allow users the ability to use '../' 
+	// in order to gain access to files below document root
+
+	// src should be specified relative to document root like:
+	// src=images/img.jpg or src=/images/img.jpg
+	// not like:
+	// src=../images/img.jpg
+	$src = preg_replace( "/\.\.+\//", "", $src );
+
+	return $src;
 
 }
 
