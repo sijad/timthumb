@@ -278,7 +278,7 @@ function get_cache_file () {
 function clean_source ( $src ) {
 
 	// don't allow off site src to be specified via http/https/ftp
-	if(preg_match("/^((ht|f)tp(s|):\/\/)/", $src)) {
+	if(preg_match("/^((ht|f)tp(s|):\/\/)/i", $src)) {
 		die("Improper src specified:" . $src);
 	}
 
