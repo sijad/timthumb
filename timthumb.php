@@ -56,23 +56,23 @@ if(!function_exists('imagecreatetruecolor')) {
 if(strlen($src) && file_exists( $src ) ) {
 
 	// open the existing image
-	$image = open_image($mime_type, $src);
-	if ($image === false) { die ('Unable to open image : ' . $src ); }		
+	$image = open_image( $mime_type, $src );
+	if( $image === false ) { die( 'Unable to open image : ' . $src ); }		
 
 	// Get original width and height
-	$width = imagesx($image);
-	$height = imagesy($image);
+	$width = imagesx( $image );
+	$height = imagesy( $image );
 
 	// don't allow new width or height to be greater than the original
 	if( $new_width > $width ) { $new_width = $width; }
 	if( $new_height > $height ) { $new_height = $height; }
 
 	// generate new w/h if not provided
-	if($new_width && !$new_height) {
-		$new_height = $height * ($new_width/$width);
+	if( $new_width && !$new_height ) {
+		$new_height = $height * ( $new_width / $width );
 	}
 	elseif($new_height && !$new_width) {
-		$new_width = $width * ($new_height/$height);
+		$new_width = $width * ( $new_height / $height );
 	}
 	elseif(!$new_width && !$new_height) {
 		$new_width = $width;
@@ -80,7 +80,7 @@ if(strlen($src) && file_exists( $src ) ) {
 	}
 
 	// create a new true color image
-	$canvas = imagecreatetruecolor($new_width, $new_height);
+	$canvas = imagecreatetruecolor( $new_width, $new_height );
 
 	if( $zoom_crop ) {
 
@@ -142,10 +142,10 @@ function show_image ( $mime_type, $image_resized, $quality, $cache_dir ) {
 	}
 	else {
 		$cache_file_name = NULL;
-		header('Content-type: ' . $mime_type);
+		header( 'Content-type: ' . $mime_type );
 	}
 	
-	if(stristr( $mime_type, 'gif' ) ) {
+	if( stristr( $mime_type, 'gif' ) ) {
 		imagegif( $image_resized, $cache_file_name );
 	}
 	elseif( stristr( $mime_type, 'jpeg' ) ) {
@@ -161,14 +161,14 @@ function show_image ( $mime_type, $image_resized, $quality, $cache_dir ) {
 
 function open_image ( $mime_type, $src ) {
 
-	if(stristr($mime_type, 'gif')) {
-		$image = imagecreatefromgif($src);
+	if( stristr( $mime_type, 'gif' ) ) {
+		$image = imagecreatefromgif( $src );
 	}
-	elseif(stristr($mime_type, 'jpeg')) {
-		$image = imagecreatefromjpeg($src);
+	elseif( stristr( $mime_type, 'jpeg' ) ) {
+		$image = imagecreatefromjpeg( $src );
 	}
-	elseif(stristr($mime_type, 'png')) {
-		$image = imagecreatefrompng($src);
+	elseif( stristr( $mime_type, 'png' ) ) {
+		$image = imagecreatefrompng( $src );
 	}
 	return $image;
 
@@ -176,37 +176,42 @@ function open_image ( $mime_type, $src ) {
 
 function mime_type ( $file ) {
 
-	// try to determine mime type by using unix file command
-	// if that was not successful, use the file's extension
-
-	// this is from find's man page:
-	// There  has  been  a  file command in every UNIX since at least Research
-	// Version 4 (man page dated November, 1973).
-
-        $os = `uname -a`;
+        $os = '';
 	$mime_type = '';
 
-        if(preg_match("/freebsd|linux/i", $os)) {
-		//error_log( "TimThumb: os/file test" );
-                $mime_type = trim ( `file -bi $file` );
+	// use PECL fileinfo to determine mime type
+	if( function_exists( 'finfo_open' ) ) {
+		$finfo = finfo_open( FILEINFO_MIME );
+		$mime_type = finfo_file( $finfo, $file );
+		finfo_close( $finfo );
+	}
+
+	// try to determine mime type by using unix file command
+        if( !strlen( $mime_type ) ) {
+		// get os name
+		$os = @shell_exec( 'uname -a' );
+		if( preg_match( "/freebsd|linux/i", $os ) ) {
+                	$mime_type = trim ( @shell_exec( 'file -bi $file' ) );
+		}
         }
-        if(!strlen($mime_type)) {
-		//error_log( "TimThumb: extension test" );
+
+	// use file's extension to determine mime type
+        if( !strlen( $mime_type ) ) {
 		$frags = split( '.', $file );
 		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
 		$types = array(
  			'jpg'  => 'image/jpeg',
  			'jpeg' => 'image/jpeg',
  			'png'  => 'image/png',
- 			'gif'  => 'image/gif',
- 			'bmp'  => 'image/bmp', 
- 			'doc'  => 'application/msword',
- 			'xls'  => 'application/msword',
- 			'xml'  => 'text/xml',
- 			'html' => 'text/html'
+ 			'gif'  => 'image/gif'
  		);
-		$mime_type = $types[ $ext ];
-		if( !strlen( $mime_type ) ) { $mime_type = 'unknown'; }
+		if( strlen( $ext ) && strlen( $types[$ext] ) ) {
+			$mime_type = $types[ $ext ];
+		}
+		// if no extension provided, default to jpg
+		elseif( !strlen( $ext ) && !strlen( $types[$ext] ) ) {
+			$mime_type = 'image/jpeg';
+		}
 	}
 	return $mime_type;
 
@@ -228,7 +233,6 @@ function check_cache ( $cache_dir, $mime_type ) {
 		mkdir( $cache_dir );
 		chmod( $cache_dir, 0777 );
 	}
-	
 	show_cache_file( $cache_dir, $mime_type );
 
 }
@@ -236,7 +240,6 @@ function check_cache ( $cache_dir, $mime_type ) {
 function show_cache_file ( $cache_dir, $mime_type ) {
 
 	$cache_file = get_cache_file();
-    
 	if( file_exists( $cache_dir . '/' . $cache_file ) ) {
     
 		// check for updates
@@ -245,9 +248,6 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 		if( strstr( $gmdate_mod, 'GMT' ) ) {
 			$gmdate_mod .= " GMT";
 		}
-	
-		//error_log("TimThumb: $gmdate_mod == $if_modified_since");
-	
 		if ( $if_modified_since == $gmdate_mod ) {
 			header( "HTTP/1.1 304 Not Modified" );
 			exit;
@@ -268,9 +268,14 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 
 function get_cache_file () {
 
-	$request_params = $_REQUEST;
-	$cachename = $_REQUEST['src'] . $_REQUEST['w'] . $_REQUEST['h'] . $_REQUEST['zc'] . $_REQUEST['q'];
-	$cache_file = md5( $cachename );
+	static $cache_file;
+	if(!$cache_file) {
+		$frags = split( '.', $_REQUEST['src'] );
+		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
+		if(!strlen($ext)) { $ext = 'jpg'; }
+		$cachename = $_REQUEST['src'] . $_REQUEST['w'] . $_REQUEST['h'] . $_REQUEST['zc'] . $_REQUEST['q'];
+		$cache_file = md5( $cachename ) . '.' . $ext;
+	}
 	return $cache_file;
 
 }
@@ -278,8 +283,8 @@ function get_cache_file () {
 function clean_source ( $src ) {
 
 	// don't allow off site src to be specified via http/https/ftp
-	if(preg_match("/^((ht|f)tp(s|):\/\/)/i", $src)) {
-		die("Improper src specified:" . $src);
+	if( preg_match( "/^((ht|f)tp(s|):\/\/)/i", $src ) ) {
+		die( "Improper src specified:" . $src );
 	}
 
 	//$src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
