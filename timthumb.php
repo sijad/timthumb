@@ -165,6 +165,7 @@ function open_image ( $mime_type, $src ) {
 		$image = imagecreatefromgif( $src );
 	}
 	elseif( stristr( $mime_type, 'jpeg' ) ) {
+		@ini_set('gd.jpeg_ignore_warning', 1);
 		$image = imagecreatefromjpeg( $src );
 	}
 	elseif( stristr( $mime_type, 'png' ) ) {
