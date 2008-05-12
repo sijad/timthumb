@@ -188,7 +188,7 @@ function mime_type ( $file ) {
 	}
 
 	// try to determine mime type by using unix file command
-        if( !strlen( $mime_type ) ) {
+        if( !valid_src_mime_type( $mime_type ) ) {
 		// get os name
 		$os = @shell_exec( 'uname -a' );
 		if( preg_match( "/freebsd|linux/i", $os ) ) {
@@ -197,7 +197,7 @@ function mime_type ( $file ) {
         }
 
 	// use file's extension to determine mime type
-        if( !strlen( $mime_type ) ) {
+        if( !valid_src_mime_type( $mime_type ) ) {
 		$frags = split( '.', $file );
 		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
 		$types = array(
@@ -209,8 +209,9 @@ function mime_type ( $file ) {
 		if( strlen( $ext ) && strlen( $types[$ext] ) ) {
 			$mime_type = $types[ $ext ];
 		}
+
 		// if no extension provided, default to jpg
-		elseif( !strlen( $ext ) && !strlen( $types[$ext] ) ) {
+		if( !strlen( $ext ) && !valid_src_mime_type( $mime_type ) ) {
 			$mime_type = 'image/jpeg';
 		}
 	}
