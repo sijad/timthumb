@@ -198,7 +198,7 @@ function mime_type ( $file ) {
 
 	// use file's extension to determine mime type
         if( !valid_src_mime_type( $mime_type ) ) {
-		$frags = split( '.', $file );
+		$frags = split( "\.", $file );
 		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
 		$types = array(
  			'jpg'  => 'image/jpeg',
@@ -272,13 +272,20 @@ function get_cache_file () {
 
 	static $cache_file;
 	if(!$cache_file) {
-		$frags = split( '.', $_REQUEST['src'] );
+		$frags = split( "\.", $_REQUEST['src'] );
 		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
-		if(!strlen($ext)) { $ext = 'jpg'; }
+		if(!valid_extension($ext)) { $ext = 'jpg'; }
 		$cachename = $_REQUEST['src'] . $_REQUEST['w'] . $_REQUEST['h'] . $_REQUEST['zc'] . $_REQUEST['q'];
 		$cache_file = md5( $cachename ) . '.' . $ext;
 	}
 	return $cache_file;
+
+}
+
+function valid_extension ($ext) {
+
+	if( preg_match( "/jpg|jpeg|png|gif/i", $ext ) ) return 1;
+	return 0;
 
 }
 
