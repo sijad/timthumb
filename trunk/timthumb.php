@@ -20,7 +20,8 @@ if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
 $src = clean_source( $_REQUEST[ "src" ] );
 
 // set document root
-$doc_root = $_SERVER['DOCUMENT_ROOT'];
+// assume that document root is one level above timthumb directory
+$doc_root = '../';
                         
 // get path to image on file system
 $src = $doc_root . '/' . $src;
@@ -177,7 +178,7 @@ function open_image ( $mime_type, $src ) {
 
 function mime_type ( $file ) {
 
-        $os = '';
+        $os = strtolower(php_uname());
 	$mime_type = '';
 
 	// use PECL fileinfo to determine mime type
@@ -188,10 +189,9 @@ function mime_type ( $file ) {
 	}
 
 	// try to determine mime type by using unix file command
-        if( !valid_src_mime_type( $mime_type ) ) {
-		// get os name
-		$os = @shell_exec( 'uname -a' );
-		if( preg_match( "/freebsd|linux/i", $os ) ) {
+	// this should not be executed on windows
+        if( !valid_src_mime_type( $mime_type ) && !(eregi('windows', php_uname()))) {
+		if( preg_match( "/freebsd|linux/", $os ) ) {
                 	$mime_type = trim ( @shell_exec( 'file -bi $file' ) );
 		}
         }
