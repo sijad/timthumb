@@ -20,8 +20,7 @@ if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
 $src = clean_source( $_REQUEST[ "src" ] );
 
 // set document root
-// assume that document root is one level above timthumb directory
-$doc_root = '../';
+$doc_root = get_document_root($src);
                         
 // get path to image on file system
 $src = $doc_root . '/' . $src;
@@ -309,6 +308,22 @@ function clean_source ( $src ) {
 	$src = preg_replace( "/\.\.+\//", "", $src );
 
 	return $src;
+
+}
+
+function get_document_root ($src) {
+	if( @file_exists( $_SERVER['DOCUMENT_ROOT'] . '/' . $src ) ) {
+		return $_SERVER['DOCUMENT_ROOT'];
+	}
+	// the relative paths below are useful if timthumb is moved outside of document root
+	// specifically if installed in wordpress themes like mimbo pro:
+	// /wp-content/themes/mimbopro/scripts/timthumb.php
+	$paths = array( '..', '../..', '../../..', '../../../..' );
+	foreach( $paths as $path ) {
+		if( @file_exists( $path . '/' . $src ) ) {
+			return $path;
+		}
+	}
 
 }
 
