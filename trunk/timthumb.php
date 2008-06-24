@@ -293,9 +293,15 @@ function valid_extension ($ext) {
 function clean_source ( $src ) {
 
 	// don't allow off site src to be specified via http/https/ftp
+	/*
 	if( preg_match( "/^((ht|f)tp(s|):\/\/)/i", $src ) ) {
 		die( "Improper src specified:" . $src );
 	}
+	*/
+	// remove http/ https/ ftp
+	$src = preg_replace("/^((ht|f)tp(s|):\/\/)/i", "", $src);
+	// remove domain name from the source url
+	$src = str_replace($_SERVER["HTTP_HOST"], "", $src);
 
 	//$src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
 	//$src = preg_replace( '/^\w+:\/\/[^\/]+/', '', $src );
