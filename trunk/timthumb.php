@@ -269,12 +269,14 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 
 function get_cache_file () {
 
+	global $quality;
+
 	static $cache_file;
 	if(!$cache_file) {
 		$frags = split( "\.", $_REQUEST['src'] );
 		$ext = strtolower( $frags[ count( $frags ) - 1 ] );
 		if(!valid_extension($ext)) { $ext = 'jpg'; }
-		$cachename = $_REQUEST['src'] . $_REQUEST['w'] . $_REQUEST['h'] . $_REQUEST['zc'] . $_REQUEST['q'];
+		$cachename = $_REQUEST['src'] . $_REQUEST['w'] . $_REQUEST['h'] . $_REQUEST['zc'] . $quality;
 		$cache_file = md5( $cachename ) . '.' . $ext;
 	}
 	return $cache_file;
