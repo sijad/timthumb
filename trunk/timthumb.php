@@ -38,7 +38,7 @@ $cache_dir = './cache';
 $mime_type = mime_type( $src );
 
 // check to see if this image is in the cache already
-//check_cache( $cache_dir, $mime_type );
+check_cache( $cache_dir, $mime_type );
 
 // make sure that the src is gif/jpg/png
 if( !valid_src_mime_type( $mime_type ) ) {
