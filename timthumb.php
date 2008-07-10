@@ -271,12 +271,15 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 
 		}
 		
+		$fileSize = filesize( $cache_file );
+		
 		// send headers then display image
 		header( "Content-Type: " . $mime_type );
 		header( "Accept-Ranges: bytes" );
 		header( "Last-Modified: " . gmdate( 'D, d M Y H:i:s', filemtime( $cache_file ) ) . " GMT" );
-		header( "Content-Length: " . filesize( $cache_file ) );
+		header( "Content-Length: " . $fileSize );
 		header( "Cache-Control: max-age=9999, must-revalidate" );
+		header( "Etag: " . md5($fileSize . $gmdate_mod) );							   		
 		header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT" );
 		readfile( $cache_file );
 		exit;
