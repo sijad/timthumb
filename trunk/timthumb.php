@@ -279,7 +279,7 @@ function show_cache_file ( $cache_dir, $mime_type ) {
 		header( "Last-Modified: " . gmdate( 'D, d M Y H:i:s', filemtime( $cache_file ) ) . " GMT" );
 		header( "Content-Length: " . $fileSize );
 		header( "Cache-Control: max-age=9999, must-revalidate" );
-		header( "Etag: " . md5($fileSize . $gmdate_mod) );							   		
+		header( "Etag: " . md5($fileSize . $gmdate_mod) );						   		
 		header( "Expires: " . gmdate( "D, d M Y H:i:s", time() + 9999 ) . "GMT" );
 		readfile( $cache_file );
 		exit;
@@ -313,12 +313,6 @@ function valid_extension ($ext) {
 
 function clean_source ( $src ) {
 
-	// don't allow off site src to be specified via http/https/ftp
-	/*
-	if( preg_match( "/^((ht|f)tp(s|):\/\/)/i", $src ) ) {
-		die( "Improper src specified:" . $src );
-	}
-	*/
 	// remove http/ https/ ftp
 	$src = preg_replace("/^((ht|f)tp(s|):\/\/)/i", "", $src);
 	// remove domain name from the source url
