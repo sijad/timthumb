@@ -1,6 +1,6 @@
-- ability to specify crop position
-- clear out cached image if image has been replaced
-- increase memory usage for large images (user definable)
-- user definable image size limits (to prevent malicious usage)
-- user definable sites to resize images from other domains
-- turn into a class
+* ability to specify crop position
+* clear out cached image if image has been replaced
+* increase memory usage for large images (user definable)
+* user definable image size limits (to prevent malicious usage)
+* user definable sites to resize images from other domains
+* turn into a class
