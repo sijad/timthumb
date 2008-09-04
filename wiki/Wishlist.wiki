@@ -4,3 +4,4 @@
   * user definable image size limits (to prevent malicious usage)
   * user definable sites to resize images from other domains
   * turn into a class
+  * support transparency in images (png and gif)
