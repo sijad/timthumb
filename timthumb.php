@@ -14,14 +14,16 @@
 
 // HTML example: <img src="/scripts/timthumb.php?src=/images/whatever.jpg&w=150&h=200&zc=1" alt="" />
 
-if( !isset( $_REQUEST[ "src" ] ) ) { die( "no image specified" ); }
+if( !isset( $_REQUEST[ "src" ] ) ) {
+	die( "no image specified" );
+}
 
 // clean params before use
 $src = clean_source( $_REQUEST[ "src" ] );
 
 // set document root
 $doc_root = get_document_root($src);
-                        
+
 // get path to image on file system
 $src = $doc_root . '/' . $src;
 
@@ -123,7 +125,11 @@ if(strlen($src) && file_exists( $src ) ) {
 	
 } else {
 
-	if( strlen( $src ) ) { echo $src . ' not found.'; } else { echo 'no source specified.'; }
+	if( strlen( $src ) ) {
+		echo $src . ' not found.';
+	} else {
+		echo 'no source specified.';
+	}
 	
 }
 
