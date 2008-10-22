@@ -151,15 +151,27 @@ function show_image ( $mime_type, $image_resized, $quality, $cache_dir ) {
 	}
 	
 	if( stristr( $mime_type, 'gif' ) ) {
+	
 		imagegif( $image_resized, $cache_file_name );
-	}
-	elseif( stristr( $mime_type, 'jpeg' ) ) {
+		
+	} elseif( stristr( $mime_type, 'jpeg' ) ) {
+	
 		imagejpeg( $image_resized, $cache_file_name, $quality );
+		
+	} elseif( stristr( $mime_type, 'png' ) ) {
+	
+		$quality = $quality / 10;
+		if($quality == 10) {
+			$quality = 9;
+		}
+		imagepng( $image_resized, $cache_file_name, $quality );
+		
 	}
-	elseif( stristr( $mime_type, 'png' ) ) {
-		imagepng( $image_resized, $cache_file_name, ceil( $quality / 10 ) );
+	
+	if( $is_writable ) {
+		show_cache_file( $cache_dir, $mime_type );
 	}
-	if( $is_writable ) { show_cache_file( $cache_dir, $mime_type ); }
+	
 	exit;
 
 }
@@ -177,15 +189,20 @@ function get_request( $property, $default = 0 ) {
 function open_image ( $mime_type, $src ) {
 
 	if( stristr( $mime_type, 'gif' ) ) {
+	
 		$image = imagecreatefromgif( $src );
-	}
-	elseif( stristr( $mime_type, 'jpeg' ) ) {
+		
+	} elseif( stristr( $mime_type, 'jpeg' ) ) {
+	
 		@ini_set('gd.jpeg_ignore_warning', 1);
 		$image = imagecreatefromjpeg( $src );
-	}
-	elseif( stristr( $mime_type, 'png' ) ) {
+		
+	} elseif( stristr( $mime_type, 'png' ) ) {
+	
 		$image = imagecreatefrompng( $src );
+		
 	}
+	
 	return $image;
 
 }
@@ -322,8 +339,11 @@ function clean_source ( $src ) {
 	// remove http/ https/ ftp
 	$src = preg_replace("/^((ht|f)tp(s|):\/\/)/i", "", $src);
 	// remove domain name from the source url
-	$src = str_replace($_SERVER["HTTP_HOST"], "", $src);
-
+	$host = $_SERVER["HTTP_HOST"];
+	$src = str_replace($host, "", $src);
+	$host = str_replace("www.", "", $host);
+	$src = str_replace($host, "", $src);
+	
 	//$src = preg_replace( "/(?:^\/+|\.{2,}\/+?)/", "", $src );
 	//$src = preg_replace( '/^\w+:\/\/[^\/]+/', '', $src );
 
