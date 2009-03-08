@@ -407,7 +407,7 @@ function show_cache_file($cache_dir) {
 			$if_modified_since = preg_replace("/;.*$/", "", $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
 			$gmdate_mod = gmdate("D, d M Y H:i:s", filemtime($cache_file));
 			
-			if(strstr($gmdate_mod, "GMT")) {
+			if(! strstr($gmdate_mod, "GMT")) {
 				$gmdate_mod .= " GMT";
 			}
 			
