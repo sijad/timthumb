@@ -29,10 +29,15 @@ if($src == "" || strlen($src) <= 3) {
 $src = cleanSource($src);
 
 // get properties
-$new_width = preg_replace("/[^0-9]+/", "", get_request("w", 100));
-$new_height = preg_replace("/[^0-9]+/", "", get_request("h", 100));
+$new_width = preg_replace("/[^0-9]+/", "", get_request("w", 0));
+$new_height = preg_replace("/[^0-9]+/", "", get_request("h", 0));
 $zoom_crop = preg_replace("/[^0-9]+/", "", get_request("zc", 1));
 $quality = preg_replace("/[^0-9]+/", "", get_request("q", 80));
+
+if ($new_width == 0 && $new_height == 0) {
+	$new_width = 100;
+	$new_height = 100;
+}
 
 // set path to cache directory (default is ./cache)
 // this can be changed to a different location
@@ -196,62 +201,6 @@ function get_request( $property, $default = 0 ) {
 		return $default;
 		
 	}
-	
-}
-
-/**
- * 
- */
-function round_me($image_resized) {
-
-	global $new_width, $new_height, $corner, $radius, $background;
-	
-	if($radius == 0) {
-		return $image_resized;
-	}
-	
-	if($corner == "0,0,0,0") {
-		return $image_resized;
-	}
-	
-	$width = $new_width;
-	$height = $new_height;
-	$corners = explode(",", $corner);
-	$colors = explode(",",$background);
-
-	$image_circle = imagecreatetruecolor($radius * 2, $radius * 2);
-	$color_show = imagecolorallocate($image_circle, $colors[0], $colors[1], $colors[2]);
-	$color_hide = imagecolorallocate($image_circle, $colors[0]-1, $colors[1]-1, $colors[2]-1);
-
-	imagecolortransparent($image_circle, $color_hide);
-	imagecolortransparent($image_resized, $color_show);
-
-	imagefilledrectangle($image_circle, 0, 0, $radius * 2, $radius * 2, $color_show);
-	imagefilledellipse($image_circle, $radius, $radius, $radius * 2, $radius * 2, $color_hide);
-
-	// top left
-	if($corners[0] == 1) {
-		imagecopymerge($image_resized, $image_circle, 0, 0, 0, 0, $radius, $radius, 100);
-	}
-
-	// top right
-	if($corners[1] == 1) {
-		imagecopymerge($image_resized, $image_circle, $width - $radius, 0, $radius, 0, $radius, $radius, 100);
-	}	
-
-	// bottom right
-	if($corners[2] == 1) {
-		imagecopymerge($image_resized, $image_circle, $width - $radius, $height - $radius, $radius, $radius, $radius, $radius, 100);
-	}
-
-	// bottom left
-	if($corners[3] == 1) {
-		imagecopymerge($image_resized, $image_circle, 0, $height - $radius, 0, $radius, $radius, $radius, 100);
-	}
-	
-	imagedestroy($image_circle);
-
-	return $image_resized;
 	
 }
 
