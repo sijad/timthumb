@@ -401,15 +401,16 @@ function show_cache_file($cache_dir) {
 
 	if (file_exists($cache_file)) {
     	
+		$gmdate_mod = gmdate("D, d M Y H:i:s", filemtime($cache_file));
+		
+		if(! strstr($gmdate_mod, "GMT")) {
+			$gmdate_mod .= " GMT";
+		}
+		
 		if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
 		
 			// check for updates
 			$if_modified_since = preg_replace("/;.*$/", "", $_SERVER["HTTP_IF_MODIFIED_SINCE"]);
-			$gmdate_mod = gmdate("D, d M Y H:i:s", filemtime($cache_file));
-			
-			if(! strstr($gmdate_mod, "GMT")) {
-				$gmdate_mod .= " GMT";
-			}
 			
 			if ($if_modified_since == $gmdate_mod) {
 				header("HTTP/1.1 304 Not Modified");
@@ -423,10 +424,10 @@ function show_cache_file($cache_dir) {
 		// send headers then display image
 		header("Content-Type: image/png");
 		header("Accept-Ranges: bytes");
-		header("Last-Modified: " . gmdate("D, d M Y H:i:s", filemtime($cache_file)) . " GMT");
+		header("Last-Modified: " . $gmdate_mod);
 		header("Content-Length: " . $fileSize);
 		header("Cache-Control: max-age=9999, must-revalidate");
-		header("Expires: " . gmdate("D, d M Y H:i:s", time() + 9999) . "GMT");
+		header("Expires: " . $gmdate_mod);
 		
 		readfile($cache_file);
 		
