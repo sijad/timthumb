@@ -499,7 +499,7 @@ function get_document_root ($src) {
     	if( @file_exists( $path . '/' . $src ) ) {
     		return $path;
     	}
-	}	
+	}
 	
 	displayError("file not found " . $src);
 
