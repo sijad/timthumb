@@ -17,7 +17,7 @@
 
 define("CACHE_SIZE", 30);		// number of files to store before clearing cache
 define("CACHE_CLEAR", 5);		// maximum number of files to delete on each cache clear
-define("VERSION", "1.06");		// version number (to force a cache refresh
+define("VERSION", "1.07");		// version number (to force a cache refresh
 
 // sort out image source
 $src = get_request("src", "");
@@ -101,13 +101,20 @@ if(strlen($src) && file_exists($src)) {
 	
 	// create a new true color image
 	$canvas = imagecreatetruecolor( $new_width, $new_height );
+	imagealphablending($canvas, false);
+	// Create a new transparent color for image
+	$color = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+	// Completely fill the background of the new image with allocated color.
+	imagefill($canvas, 0, 0, $color);
+	// Restore transparency blending
+	imagesavealpha($canvas, true);
 
 	if( $zoom_crop ) {
-
+	
 		$src_x = $src_y = 0;
 		$src_w = $width;
 		$src_h = $height;
-
+		
 		$cmp_x = $width  / $new_width;
 		$cmp_y = $height / $new_height;
 
@@ -124,7 +131,7 @@ if(strlen($src) && file_exists($src)) {
 			$src_y = round( ( $height - ( $height / $cmp_y * $cmp_x ) ) / 2 );
 
 		}
-        
+		
 		imagecopyresampled( $canvas, $image, 0, 0, $src_x, $src_y, $new_width, $new_height, $src_w, $src_h );
 
 	} else {
@@ -183,7 +190,9 @@ function show_image($mime_type, $image_resized, $cache_dir) {
 		show_cache_file($cache_dir, $mime_type);
 	}
 
-	displayError();
+	imagedestroy($image_resized);
+	
+	displayError("error showing image");
 
 }
 
@@ -281,7 +290,7 @@ function mime_type($file) {
 	// this should not be executed on windows
     if (!valid_src_mime_type($mime_type) && !(eregi('windows', $os))) {
 		if (preg_match("/freebsd|linux/", $os)) {
-			$mime_type = trim(@shell_exec("file -bi " . $file));
+			$mime_type = trim(@shell_exec('file -bi "' . $file . '"'));
 		}
 	}
 
@@ -391,12 +400,11 @@ function show_cache_file($cache_dir) {
  */
 function get_cache_file() {
 
-	global $src, $new_width, $new_height, $zoom_crop, $quality, $corner, $radius, $background, $filters;
 	static $cache_file;
 	
 	if(!$cache_file) {
 		
-		$cachename = $src . $new_width . $new_height . $zoom_crop . $quality . $corner . $radius . $background . VERSION . $filters;
+		$cachename = $_SERVER["QUERY_STRING"] . VERSION;
 		$cache_file = md5($cachename) . ".png";
 		
 	}
@@ -469,6 +477,7 @@ function get_document_root ($src) {
 	// specifically if installed in wordpress themes like mimbo pro:
 	// /wp-content/themes/mimbopro/scripts/timthumb.php
 	$paths = array(
+		".",
 		"..",
 		"../..",
 		"../../..",
