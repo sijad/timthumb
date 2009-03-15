@@ -27,6 +27,8 @@ if($src == "" || strlen($src) <= 3) {
 
 // clean params before use
 $src = cleanSource($src);
+// last modified time (for caching)
+$lastModified = filemtime($src);
 
 // get properties
 $new_width = preg_replace("/[^0-9]+/", "", get_request("w", 0));
@@ -400,11 +402,13 @@ function show_cache_file($cache_dir) {
  */
 function get_cache_file() {
 
+	global $lastModified;
+
 	static $cache_file;
 	
 	if(!$cache_file) {
 		
-		$cachename = $_SERVER["QUERY_STRING"] . VERSION;
+		$cachename = $_SERVER["QUERY_STRING"] . VERSION . $lastModified;
 		$cache_file = md5($cachename) . ".png";
 		
 	}
@@ -444,7 +448,6 @@ function cleanSource($src) {
 	$host = str_replace("www.", "", $host);
 	$src = str_replace($host, "", $src);
 	
-
 	// don't allow users the ability to use '../' 
 	// in order to gain access to files below document root
 
