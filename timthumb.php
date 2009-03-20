@@ -247,20 +247,23 @@ function cleanCache() {
 
 	$files = glob("cache/*", GLOB_BRACE);
 	
-	usort($files, "filemtime_compare");
+	if(count($files) > 0) {
 	
-	$i = 0;
-	
-	if (count($files) > CACHE_SIZE) {
-		foreach ($files as $file) {
+		usort($files, "filemtime_compare");
+		$i = 0;
 		
-			$i ++;
-			if ($i >= CACHE_CLEAR) {
-				return;
-			}
+		if (count($files) > CACHE_SIZE) {
+			foreach ($files as $file) {
 			
-			unlink($file);
+				$i ++;
+				if ($i >= CACHE_CLEAR) {
+					return;
+				}
+				
+				unlink($file);
+			}
 		}
+		
 	}
 }
 
