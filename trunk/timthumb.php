@@ -281,7 +281,12 @@ function filemtime_compare($a, $b) {
  */
 function mime_type($file) {
 
-    $os = strtolower(php_uname());
+	// use built-in mime magic function if available
+	if (function_exists('mime_content_type')) {
+		return mime_content_type($file);
+        }
+
+	$os = strtolower(php_uname());
 	$mime_type = '';
 
 	// use PECL fileinfo to determine mime type
