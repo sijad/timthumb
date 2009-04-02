@@ -298,7 +298,7 @@ function mime_type($file) {
 
 	// try to determine mime type by using unix file command
 	// this should not be executed on windows
-    if (!valid_src_mime_type($mime_type) && !(eregi('windows', $os))) {
+	if (!valid_src_mime_type($mime_type) && !(eregi('windows', $os))) {
 		if (preg_match("/freebsd|linux/", $os)) {
 			$mime_type = trim(@shell_exec('file -bi "' . $file . '"'));
 		}
