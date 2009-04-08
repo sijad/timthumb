@@ -15,9 +15,30 @@
 	HTML example: <img src="/scripts/timthumb.php?src=/images/whatever.jpg&w=150&h=200&zc=1" alt="" />
 */
 
-define("CACHE_SIZE", 30);		// number of files to store before clearing cache
+/*
+$sizeLimits = array(
+	"100x100",
+	"150x150",
+);
+*/
+
+define("CACHE_SIZE", 100);		// number of files to store before clearing cache
 define("CACHE_CLEAR", 5);		// maximum number of files to delete on each cache clear
 define("VERSION", "1.07");		// version number (to force a cache refresh
+
+$imageFilters = array(
+	"1" => array(IMG_FILTER_NEGATE, 0),
+	"2" => array(IMG_FILTER_GRAYSCALE, 0),
+	"3" => array(IMG_FILTER_BRIGHTNESS, 1),
+	"4" => array(IMG_FILTER_CONTRAST, 1),
+	"5" => array(IMG_FILTER_COLORIZE, 4),
+	"6" => array(IMG_FILTER_EDGEDETECT, 0),
+	"7" => array(IMG_FILTER_EMBOSS, 0),
+	"8" => array(IMG_FILTER_GAUSSIAN_BLUR, 0),
+	"9" => array(IMG_FILTER_SELECTIVE_BLUR, 0),
+	"10" => array(IMG_FILTER_MEAN_REMOVAL, 0),
+	"11" => array(IMG_FILTER_SMOOTH, 0),
+);
 
 // sort out image source
 $src = get_request("src", "");
@@ -31,10 +52,11 @@ $src = cleanSource($src);
 $lastModified = filemtime($src);
 
 // get properties
-$new_width = preg_replace("/[^0-9]+/", "", get_request("w", 0));
-$new_height = preg_replace("/[^0-9]+/", "", get_request("h", 0));
-$zoom_crop = preg_replace("/[^0-9]+/", "", get_request("zc", 1));
-$quality = preg_replace("/[^0-9]+/", "", get_request("q", 80));
+$new_width 		= preg_replace("/[^0-9]+/", "", get_request("w", 0));
+$new_height 	= preg_replace("/[^0-9]+/", "", get_request("h", 0));
+$zoom_crop 		= preg_replace("/[^0-9]+/", "", get_request("zc", 1));
+$quality 		= preg_replace("/[^0-9]+/", "", get_request("q", 80));
+$filters		= get_request("f", "");
 
 if ($new_width == 0 && $new_height == 0) {
 	$new_width = 100;
@@ -50,6 +72,7 @@ $mime_type = mime_type($src);
 
 // check to see if this image is in the cache already
 check_cache( $cache_dir, $mime_type );
+
 // if not in cache then clear some space and generate a new file
 cleanCache();
 
@@ -76,7 +99,7 @@ if(strlen($src) && file_exists($src)) {
 	// Get original width and height
 	$width = imagesx($image);
 	$height = imagesy($image);
-
+	
 	// don't allow new width or height to be greater than the original
 	if( $new_width > $width ) {
 		$new_width = $width;
@@ -87,15 +110,15 @@ if(strlen($src) && file_exists($src)) {
 
 	// generate new w/h if not provided
 	if( $new_width && !$new_height ) {
-	
+		
 		$new_height = $height * ( $new_width / $width );
 		
 	} elseif($new_height && !$new_width) {
-	
+		
 		$new_width = $width * ( $new_height / $height );
 		
 	} elseif(!$new_width && !$new_height) {
-	
+		
 		$new_width = $width;
 		$new_height = $height;
 		
@@ -112,11 +135,11 @@ if(strlen($src) && file_exists($src)) {
 	imagesavealpha($canvas, true);
 
 	if( $zoom_crop ) {
-	
+
 		$src_x = $src_y = 0;
 		$src_w = $width;
 		$src_h = $height;
-		
+
 		$cmp_x = $width  / $new_width;
 		$cmp_y = $height / $new_height;
 
@@ -143,11 +166,51 @@ if(strlen($src) && file_exists($src)) {
 
 	}
 	
+	if ($filters != "") {
+		// apply filters to image
+		$filterList = explode("|", $filters);
+		foreach($filterList as $fl) {
+			$filterSettings = explode(",", $fl);
+			if(isset($imageFilters[$filterSettings[0]])) {
+			
+				for($i = 0; $i < 4; $i ++) {
+					if(!isset($filterSettings[$i])) {
+						$filterSettings[$i] = null;
+					}
+				}
+				
+				switch($imageFilters[$filterSettings[0]][1]) {
+				
+					case 1:
+					
+						imagefilter($canvas, $imageFilters[$filterSettings[0]][0], $filterSettings[1]);
+						break;
+					
+					case 2:
+					
+						imagefilter($canvas, $imageFilters[$filterSettings[0]][0], $filterSettings[1], $filterSettings[2]);
+						break;
+					
+					case 3:
+					
+						imagefilter($canvas, $imageFilters[$filterSettings[0]][0], $filterSettings[1], $filterSettings[2], $filterSettings[3]);
+						break;
+					
+					default:
+					
+						imagefilter($canvas, $imageFilters[$filterSettings[0]][0]);
+						break;
+						
+				}
+			}
+		}
+	}
+	
 	// output image to browser based on mime type
-	show_image( $mime_type, $canvas, $cache_dir );
+	show_image($mime_type, $canvas, $cache_dir);
 	
 	// remove image from memory
-	imagedestroy( $canvas );
+	imagedestroy($canvas);
 	
 } else {
 
@@ -247,24 +310,35 @@ function cleanCache() {
 
 	$files = glob("cache/*", GLOB_BRACE);
 	
-	if(count($files) > 0) {
+	$yesterday = time() - (24 * 60 * 60);
 	
+	if (count($files) > 0) {
+		
 		usort($files, "filemtime_compare");
 		$i = 0;
 		
 		if (count($files) > CACHE_SIZE) {
-			foreach ($files as $file) {
 			
+			foreach ($files as $file) {
+				
 				$i ++;
+				
 				if ($i >= CACHE_CLEAR) {
 					return;
 				}
 				
+				if (filemtime($file) < $yesterday) {
+					return;
+				}
+				
 				unlink($file);
+				
 			}
+			
 		}
 		
 	}
+
 }
 
 /**
@@ -277,29 +351,35 @@ function filemtime_compare($a, $b) {
 }
 
 /**
- * 
+ * determine the file mime type
  */
 function mime_type($file) {
 
-	// use built-in mime magic function if available
-	if (function_exists('mime_content_type')) {
-		return mime_content_type($file);
-        }
+	if (stristr(PHP_OS, 'WIN')) { 
+		$os = 'WIN';
+	} else { 
+		$os = PHP_OS;
+	}
 
-	$os = strtolower(php_uname());
 	$mime_type = '';
 
+	if (function_exists('mime_content_type')) {
+		$mime_type = mime_content_type($file);
+	}
+	
 	// use PECL fileinfo to determine mime type
-	if (function_exists('finfo_open')) {
-		$finfo = finfo_open(FILEINFO_MIME);
-		$mime_type = finfo_file($finfo, $file);
-		finfo_close($finfo);
+	if (!valid_src_mime_type($mime_type)) {
+		if (function_exists('finfo_open')) {
+			$finfo = finfo_open(FILEINFO_MIME);
+			$mime_type = finfo_file($finfo, $file);
+			finfo_close($finfo);
+		}
 	}
 
 	// try to determine mime type by using unix file command
 	// this should not be executed on windows
-	if (!valid_src_mime_type($mime_type) && !(eregi('windows', $os))) {
-		if (preg_match("/freebsd|linux/", $os)) {
+    if (!valid_src_mime_type($mime_type) && $os != "WIN") {
+		if (preg_match("/FREEBSD|LINUX/", $os)) {
 			$mime_type = trim(@shell_exec('file -bi "' . $file . '"'));
 		}
 	}
@@ -411,7 +491,7 @@ function show_cache_file($cache_dir) {
 function get_cache_file() {
 
 	global $lastModified;
-
+	
 	static $cache_file;
 	
 	if(!$cache_file) {
@@ -426,20 +506,20 @@ function get_cache_file() {
 }
 
 /**
- * 
+ * check to if the url is valid or not
  */
 function valid_extension ($ext) {
 
 	if( preg_match( "/jpg|jpeg|png|gif/i", $ext ) ) {
-		return 1;
+		return TRUE;
 	} else {
-		return 0;
+		return FALSE;
 	}
 	
 }
 
 /**
- * 
+ * tidy up the image source url
  */
 function cleanSource($src) {
 
@@ -455,7 +535,7 @@ function cleanSource($src) {
 	$src = str_replace($host, "", $src);
 	$host = str_replace("www.", "", $host);
 	$src = str_replace($host, "", $src);
-	
+
 	// don't allow users the ability to use '../' 
 	// in order to gain access to files below document root
 
@@ -510,7 +590,7 @@ function get_document_root ($src) {
     	if( @file_exists( $path . '/' . $src ) ) {
     		return $path;
     	}
-	}
+	}	
 	
 	displayError("file not found " . $src);
 
