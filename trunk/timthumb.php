@@ -22,9 +22,9 @@ $sizeLimits = array(
 );
 */
 
-define("CACHE_SIZE", 100);		// number of files to store before clearing cache
+define("CACHE_SIZE", 200);		// number of files to store before clearing cache
 define("CACHE_CLEAR", 5);		// maximum number of files to delete on each cache clear
-define("VERSION", "1.07");		// version number (to force a cache refresh
+define("VERSION", "1.08");		// version number (to force a cache refresh
 
 $imageFilters = array(
 	"1" => array(IMG_FILTER_NEGATE, 0),
@@ -327,7 +327,7 @@ function cleanCache() {
 					return;
 				}
 				
-				if (filemtime($file) < $yesterday) {
+				if (filemtime($file) > $yesterday) {
 					return;
 				}
 				
@@ -491,14 +491,11 @@ function show_cache_file($cache_dir) {
 function get_cache_file() {
 
 	global $lastModified;
-	
 	static $cache_file;
 	
 	if(!$cache_file) {
-		
-		$cachename = $_SERVER["QUERY_STRING"] . VERSION . $lastModified;
-		$cache_file = md5($cachename) . ".png";
-		
+		$cachename = $_SERVER['QUERY_STRING'] . VERSION . $lastModified;
+		$cache_file = md5($cachename) . '.png';
 	}
 	
 	return $cache_file;
@@ -510,7 +507,7 @@ function get_cache_file() {
  */
 function valid_extension ($ext) {
 
-	if( preg_match( "/jpg|jpeg|png|gif/i", $ext ) ) {
+	if (preg_match("/jpg|jpeg|png|gif/i", $ext)) {
 		return TRUE;
 	} else {
 		return FALSE;
@@ -543,7 +540,7 @@ function cleanSource($src) {
 	// src=images/img.jpg or src=/images/img.jpg
 	// not like:
 	// src=../images/img.jpg
-	$src = preg_replace( "/\.\.+\//", "", $src );
+	$src = preg_replace("/\.\.+\//", "", $src);
 
 	//print_r($_SERVER);
 	
@@ -560,7 +557,7 @@ function cleanSource($src) {
 function get_document_root ($src) {
 
 	// check for unix servers
-	if( @file_exists( $_SERVER['DOCUMENT_ROOT'] . '/' . $src ) ) {
+	if(@file_exists($_SERVER['DOCUMENT_ROOT'] . '/' . $src)) {
 		return $_SERVER['DOCUMENT_ROOT'];
 	}
 	
@@ -576,34 +573,33 @@ function get_document_root ($src) {
 		"../../../../.."
 	);
 	
-	foreach( $paths as $path ) {
-		if( @file_exists( $path . '/' . $src ) ) {
+	foreach($paths as $path) {
+		if(@file_exists($path . '/' . $src)) {
 			return $path;
 		}
 	}
 	
 	// special check for microsoft servers
 	if(!isset($_SERVER['DOCUMENT_ROOT'])) {
-    	$path = str_replace("/", "\\", $_SERVER["ORIG_PATH_INFO"]);
-    	$path = str_replace($path, "", $_SERVER["SCRIPT_FILENAME"]);
+    	$path = str_replace("/", "\\", $_SERVER['ORIG_PATH_INFO']);
+    	$path = str_replace($path, "", $_SERVER['SCRIPT_FILENAME']);
     	
     	if( @file_exists( $path . '/' . $src ) ) {
     		return $path;
     	}
 	}	
 	
-	displayError("file not found " . $src);
+	displayError('file not found ' . $src);
 
 }
 
 /**
- *
+ * generic error message
  */
-function displayError($errorString = "") {
+function displayError($errorString = '') {
 
 	header('HTTP/1.1 400 Bad Request');
 	die($errorString);
 	
 }
-
 ?>
