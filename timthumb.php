@@ -541,8 +541,6 @@ function cleanSource($src) {
 	// not like:
 	// src=../images/img.jpg
 	$src = preg_replace("/\.\.+\//", "", $src);
-
-	//print_r($_SERVER);
 	
 	// get path to image on file system
 	$src = get_document_root($src) . '/' . $src;	
@@ -560,6 +558,16 @@ function get_document_root ($src) {
 	if(@file_exists($_SERVER['DOCUMENT_ROOT'] . '/' . $src)) {
 		return $_SERVER['DOCUMENT_ROOT'];
 	}
+	
+	// check from script filename (to get all directories to timthumb location)
+	$parts = array_diff(explode('/', $_SERVER['SCRIPT_FILENAME']), explode('/', $_SERVER['DOCUMENT_ROOT']));
+	$path = $_SERVER['DOCUMENT_ROOT'] . '/';
+	foreach ($parts as $part) {
+		$path .= $part . '/';
+		if (file_exists($path . $src)) {
+			return $path;
+		}
+	}	
 	
 	// the relative paths below are useful if timthumb is moved outside of document root
 	// specifically if installed in wordpress themes like mimbo pro:
