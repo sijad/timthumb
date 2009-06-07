@@ -22,9 +22,9 @@ $sizeLimits = array(
 );
 */
 
-define("CACHE_SIZE", 200);		// number of files to store before clearing cache
-define("CACHE_CLEAR", 5);		// maximum number of files to delete on each cache clear
-define("VERSION", "1.08");		// version number (to force a cache refresh
+define ('CACHE_SIZE', 250);		// number of files to store before clearing cache
+define ('CACHE_CLEAR', 5);		// maximum number of files to delete on each cache clear
+define ('VERSION', '1.09');		// version number (to force a cache refresh
 
 $imageFilters = array(
 	"1" => array(IMG_FILTER_NEGATE, 0),
