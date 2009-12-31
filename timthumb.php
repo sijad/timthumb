@@ -634,6 +634,7 @@ function cleanSource($src) {
 
     $src = str_replace('http://' . $_SERVER['HTTP_HOST'], '', $src);
     $src = str_replace('https://' . $_SERVER['HTTP_HOST'], '', $src);
+    $src = htmlentities($src);
 
     $src = checkExternal ($src);
     
