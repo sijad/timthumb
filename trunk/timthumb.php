@@ -639,7 +639,7 @@ function cleanSource($src) {
     $src = checkExternal ($src);
     
     // remove slash from start of string
-    if(strpos($src, '/') == 0) {
+    if(strpos($src, '/') === 0) {
         $src = substr($src, -(strlen($src) - 1));
     }
 
