@@ -34,7 +34,7 @@ define ('CACHE_SIZE', 250);        // number of files to store before clearing c
 define ('CACHE_CLEAR', 5);        // maximum number of files to delete on each cache clear
 define ('VERSION', '1.10b');        // version number (to force a cache refresh
 
-if (function_exists('imagefilter')) {
+if (function_exists('imagefilter') && defined('IMG_FILTER_NEGATE')) {
 	$imageFilters = array(
 		"1" => array(IMG_FILTER_NEGATE, 0),
 		"2" => array(IMG_FILTER_GRAYSCALE, 0),
@@ -171,7 +171,7 @@ if(strlen($src) && file_exists($src)) {
 
     }
     
-    if ($filters != "" && function_exists('imagefilter')) {
+    if ($filters != '' && function_exists('imagefilter') && defined('IMG_FILTER_NEGATE')) {
         // apply filters to image
         $filterList = explode("|", $filters);
         foreach($filterList as $fl) {
