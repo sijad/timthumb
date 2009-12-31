@@ -401,7 +401,7 @@ function mime_type($file) {
     // this should not be executed on windows
     if (!valid_src_mime_type($mime_type) && $os != "WIN") {
         if (preg_match("/FREEBSD|LINUX/", $os)) {
-            $mime_type = trim(@shell_exec('file -bi "' . $file . '"'));
+			$mime_type = trim(@shell_exec('file -bi ' . escapeshellarg($file)));
         }
     }
 
