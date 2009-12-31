@@ -86,7 +86,7 @@ check_cache ($cache_dir, $mime_type);
 // if not in cache then clear some space and generate a new file
 cleanCache();
 
-ini_set('memory_limit', "30M");
+ini_set('memory_limit', "50M");
 
 // make sure that the src is gif/jpg/png
 if(!valid_src_mime_type($mime_type)) {
