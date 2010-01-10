@@ -32,7 +32,7 @@ if(!function_exists('imagecreatetruecolor')) {
 
 define ('CACHE_SIZE', 250);        // number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);        // maximum number of files to delete on each cache clear
-define ('VERSION', '1.11');        // version number (to force a cache refresh
+define ('VERSION', '1.12');        // version number (to force a cache refresh
 
 if (function_exists('imagefilter') && defined('IMG_FILTER_NEGATE')) {
 	$imageFilters = array(
@@ -624,32 +624,20 @@ function checkExternal ($src) {
  */
 function cleanSource($src) {
 
-    $src = str_replace('http://' . $_SERVER['HTTP_HOST'], '', $src);
-    $src = str_replace('https://' . $_SERVER['HTTP_HOST'], '', $src);
-    $src = htmlentities($src);
-
+	$host = $_SERVER['HTTP_HOST'];
+	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "/i";
+	
+	$src = preg_replace ($regex, '', $src);
+	$src = htmlentities ($src);
     $src = checkExternal ($src);
     
     // remove slash from start of string
-    if(strpos($src, '/') === 0) {
+    if (strpos($src, '/') === 0) {
         $src = substr($src, -(strlen($src) - 1));
     }
 
-    // remove http/ https/ ftp
-    $src = preg_replace("/^((ht|f)tp(s|):\/\/)/i", '', $src);
-    // remove domain name from the source url
-    $host = $_SERVER['HTTP_HOST'];
-    $src = str_replace($host, '', $src);
-    $host = str_replace('www.', '', $host);
-    $src = str_replace($host, '', $src);
-
     // don't allow users the ability to use '../' 
     // in order to gain access to files below document root
-
-    // src should be specified relative to document root like:
-    // src=images/img.jpg or src=/images/img.jpg
-    // not like:
-    // src=../images/img.jpg
     $src = preg_replace("/\.\.+\//", "", $src);
     
     // get path to image on file system
