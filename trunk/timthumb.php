@@ -544,6 +544,7 @@ function checkExternal ($src) {
         'picasa.com',
         'blogger.com',
         'wordpress.com',
+        'img.youtube.com',
     );
 
     if (ereg('http://', $src) == true) {
@@ -555,12 +556,15 @@ function checkExternal ($src) {
             if (ereg($site, $url_info['host']) == true) {
                 $isAllowedSite = true;
             }
-        }
+		}
         
-        if ($isAllowedSite) {
-        
-            $filename = explode('/', $src);
-            $local_filepath = 'temp/' . $filename[count($filename) - 1];
+		if ($isAllowedSite) {
+		
+			$fileDetails = pathinfo($src);
+			$ext = strtolower($fileDetails['extension']);
+			
+			$filename = md5($src);
+			$local_filepath = 'temp/' . $filename . '.' . $ext;
             
             if (!file_exists($local_filepath)) {
                 
