@@ -628,7 +628,7 @@ function checkExternal ($src) {
  */
 function cleanSource($src) {
 
-	$host = $_SERVER['HTTP_HOST'];
+	$host = str_replace('www.', '', $_SERVER['HTTP_HOST']);
 	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "/i";
 	
 	$src = preg_replace ($regex, '', $src);
@@ -637,7 +637,7 @@ function cleanSource($src) {
     
     // remove slash from start of string
     if (strpos($src, '/') === 0) {
-        $src = substr($src, -(strlen($src) - 1));
+        $src = substr ($src, -(strlen($src) - 1));
     }
 
     // don't allow users the ability to use '../' 
