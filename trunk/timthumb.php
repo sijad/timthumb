@@ -90,7 +90,7 @@ ini_set('memory_limit', "50M");
 
 // make sure that the src is gif/jpg/png
 if(!valid_src_mime_type($mime_type)) {
-    displayError("Invalid src mime type: " .$mime_type);
+    displayError('Invalid src mime type: ' . $mime_type);
 }
 
 if(strlen($src) && file_exists($src)) {
@@ -211,10 +211,10 @@ if(strlen($src) && file_exists($src)) {
     
 } else {
 
-    if(strlen($src)) {
-        displayError("image " . $src . " not found");
+    if (strlen($src)) {
+        displayError ('image ' . $src . ' not found');
     } else {
-        displayError("no source specified");
+        displayError ('no source specified');
     }
     
 }
@@ -262,7 +262,7 @@ function show_image($mime_type, $image_resized, $cache_dir) {
 
     imagedestroy ($image_resized);
     
-    displayError ("error showing image");
+    displayError ('error showing image');
 
 }
 
@@ -374,7 +374,7 @@ function mime_type($file) {
 
     $mime_type = '';
 
-    if (function_exists('mime_content_type')) {
+    if (function_exists('mime_content_type') && $os != 'WIN') {
         $mime_type = mime_content_type($file);
     }
     
@@ -708,10 +708,12 @@ function get_document_root ($src) {
 /**
  * generic error message
  */
-function displayError($errorString = '') {
+function displayError ($errorString = '') {
 
     header('HTTP/1.1 400 Bad Request');
-    die($errorString);
+	echo $errorString;
+	echo '<br />TimThumb version : ' . VERSION;
+    die();
     
 }
 ?>
