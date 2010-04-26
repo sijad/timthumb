@@ -32,7 +32,7 @@ if(!function_exists('imagecreatetruecolor')) {
 
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
-define ('VERSION', '1.13');					// version number (to force a cache refresh)
+define ('VERSION', '1.14');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('DIRECTORY_TEMP', './temp');		// temp directory
 
@@ -64,11 +64,12 @@ $src = cleanSource($src);
 $lastModified = filemtime($src);
 
 // get properties
-$new_width         = preg_replace("/[^0-9]+/", "", get_request("w", 0));
-$new_height     = preg_replace("/[^0-9]+/", "", get_request("h", 0));
-$zoom_crop         = preg_replace("/[^0-9]+/", "", get_request("zc", 1));
-$quality         = preg_replace("/[^0-9]+/", "", get_request("q", 80));
-$filters        = get_request("f", "");
+$new_width         = preg_replace("/[^0-9]+/", '', get_request('w', 0));
+$new_height     = preg_replace("/[^0-9]+/", '', get_request('h', 0));
+$zoom_crop         = preg_replace("/[^0-9]+/", '', get_request('zc', 1));
+$quality         = preg_replace("/[^0-9]+/", '', get_request('q', 80));
+$filters        = get_request('f', '');
+$sharpen        = get_request('s', 0);
 
 if ($new_width == 0 && $new_height == 0) {
     $new_width = 100;
@@ -84,7 +85,7 @@ check_cache ($mime_type);
 // if not in cache then clear some space and generate a new file
 cleanCache();
 
-ini_set('memory_limit', "50M");
+ini_set('memory_limit', '50M');
 
 // make sure that the src is gif/jpg/png
 if(!valid_src_mime_type($mime_type)) {
@@ -200,6 +201,20 @@ if(strlen($src) && file_exists($src)) {
             }
         }
     }
+	
+	if ($sharpen > 0 && function_exists('imageconvolution')) {
+	
+		$sharpenMatrix = array(
+			array(-1,-1,-1),
+			array(-1,16,-1),
+			array(-1,-1,-1),
+		);
+		$divisor = 8;
+		$offset = 0;
+
+		imageconvolution($canvas, $sharpenMatrix, $divisor, $offset);
+	
+	}
     
     // output image to browser based on mime type
     show_image($mime_type, $canvas);
