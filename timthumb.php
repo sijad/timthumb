@@ -632,7 +632,7 @@ function cleanSource($src) {
 	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "/i";
 	
 	$src = preg_replace ($regex, '', $src);
-	$src = htmlentities ($src);
+	$src = strip_tags ($src);
     $src = checkExternal ($src);
     
     // remove slash from start of string
@@ -711,8 +711,7 @@ function get_document_root ($src) {
 function displayError ($errorString = '') {
 
     header('HTTP/1.1 400 Bad Request');
-	echo $errorString;
-	echo '<br />TimThumb version : ' . VERSION;
+	echo '<pre>' . $errorString . '<br />TimThumb version : ' . VERSION . '</pre>';
     die();
     
 }
