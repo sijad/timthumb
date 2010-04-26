@@ -30,9 +30,11 @@ if(!function_exists('imagecreatetruecolor')) {
     displayError('GD Library Error: imagecreatetruecolor does not exist - please contact your webhost and ask them to install the GD library');
 }
 
-define ('CACHE_SIZE', 250);        // number of files to store before clearing cache
-define ('CACHE_CLEAR', 5);        // maximum number of files to delete on each cache clear
-define ('VERSION', '1.12');        // version number (to force a cache refresh
+define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
+define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
+define ('VERSION', '1.13');					// version number (to force a cache refresh)
+define ('DIRECTORY_CACHE', './cache');		// cache directory
+define ('DIRECTORY_TEMP', './temp');		// temp directory
 
 if (function_exists('imagefilter') && defined('IMG_FILTER_NEGATE')) {
 	$imageFilters = array(
@@ -73,15 +75,11 @@ if ($new_width == 0 && $new_height == 0) {
     $new_height = 100;
 }
 
-// set path to cache directory (default is ./cache)
-// this can be changed to a different location
-$cache_dir = './cache';
-
 // get mime type of src
 $mime_type = mime_type($src);
 
 // check to see if this image is in the cache already
-check_cache ($cache_dir, $mime_type);
+check_cache ($mime_type);
 
 // if not in cache then clear some space and generate a new file
 cleanCache();
@@ -204,7 +202,7 @@ if(strlen($src) && file_exists($src)) {
     }
     
     // output image to browser based on mime type
-    show_image($mime_type, $canvas, $cache_dir);
+    show_image($mime_type, $canvas);
     
     // remove image from memory
     imagedestroy($canvas);
@@ -222,13 +220,13 @@ if(strlen($src) && file_exists($src)) {
 /**
  * 
  */
-function show_image($mime_type, $image_resized, $cache_dir) {
+function show_image($mime_type, $image_resized) {
 
     global $quality;
 
     // check to see if we can write to the cache directory
     $is_writable = 0;
-    $cache_file_name = $cache_dir . '/' . get_cache_file();
+    $cache_file_name = DIRECTORY_CACHE . '/' . get_cache_file();
 
     if (touch($cache_file_name)) {
         
@@ -257,7 +255,7 @@ function show_image($mime_type, $image_resized, $cache_dir) {
     }
     
     if ($is_writable) {
-        show_cache_file ($cache_dir, $mime_type);
+        show_cache_file ($mime_type);
     }
 
     imagedestroy ($image_resized);
@@ -441,17 +439,17 @@ function valid_src_mime_type($mime_type) {
 /**
  * 
  */
-function check_cache ($cache_dir, $mime_type) {
+function check_cache ($mime_type) {
 
     // make sure cache dir exists
-    if (!file_exists($cache_dir)) {
+    if (!file_exists(DIRECTORY_CACHE)) {
         // give 777 permissions so that developer can overwrite
         // files created by web server user
-        mkdir($cache_dir);
-        chmod($cache_dir, 0777);
+        mkdir(DIRECTORY_CACHE);
+        chmod(DIRECTORY_CACHE, 0777);
     }
 
-    show_cache_file ($cache_dir, $mime_type);
+    show_cache_file ($mime_type);
 
 }
 
@@ -459,9 +457,9 @@ function check_cache ($cache_dir, $mime_type) {
 /**
  * 
  */
-function show_cache_file ($cache_dir, $mime_type) {
+function show_cache_file ($mime_type) {
 
-    $cache_file = $cache_dir . '/' . get_cache_file();
+    $cache_file = DIRECTORY_CACHE . '/' . get_cache_file();
 
     if (file_exists($cache_file)) {
         
@@ -566,7 +564,7 @@ function checkExternal ($src) {
 			$ext = strtolower($fileDetails['extension']);
 			
 			$filename = md5($src);
-			$local_filepath = 'temp/' . $filename . '.' . $ext;
+			$local_filepath = DIRECTORY_TEMP . '/' . $filename . '.' . $ext;
             
             if (!file_exists($local_filepath)) {
                 
