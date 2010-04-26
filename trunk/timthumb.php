@@ -548,13 +548,14 @@ function checkExternal ($src) {
         'img.youtube.com',
     );
 
-    if (ereg('http://', $src) == true) {
+    if (preg_match('/http:\/\//', $src) == true) {
     
         $url_info = parse_url ($src);
         
         $isAllowedSite = false;
         foreach ($allowedSites as $site) {
-            if (ereg($site, $url_info['host']) == true) {
+			$site = '/' . addslashes($site) . '/';
+            if (preg_match($site, $url_info['host']) == true) {
                 $isAllowedSite = true;
             }
 		}
