@@ -483,6 +483,7 @@ function show_cache_file ($cache_dir, $mime_type) {
 
         }
         
+		clearstatcache();
         $fileSize = filesize ($cache_file);
         
         // send headers then display image
