@@ -8,3 +8,5 @@
   * allow for disabling of image output. Will allow image resizing (pre-caching) without display. Good for administration and batch processing
   * a new zoomcrop setting which allows a single dimension to be specified and the second dimension to be calculated accordingly (to scale images)
   * a new zoomcrop setting to allow image sizes to be specified as percentages
+  * default image for broken image urls
+  * 
