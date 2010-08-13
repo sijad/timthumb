@@ -1,12 +1,19 @@
-  * ability to specify crop position
-  * clear out cached image if image has been replaced
+Below is a list of features that 'may' be implemented at some unspecified stage in the future (I don't like to promise anything).
+
+==Wishes==
+
   * increase memory usage for large images (user definable)
   * user definable image size limits (to prevent malicious usage)
-  * user definable external sites to resize images from other domains
-  * turn into a class
-  * support transparency in images (png and gif)
   * allow for disabling of image output. Will allow image resizing (pre-caching) without display. Good for administration and batch processing
-  * a new zoomcrop setting which allows a single dimension to be specified and the second dimension to be calculated accordingly (to scale images)
-  * a new zoomcrop setting to allow image sizes to be specified as percentages
   * default image for broken image urls
-  * 
+  * option to crop and not scale
+  * optional settings file
+
+==Wish Granted==
+
+  * clear out cached image if image has been replaced
+  * user definable external sites to resize images from other domains
+  * support transparency in images (png and gif)
+  * a new setting which allows a single dimension to be specified and the second dimension to be calculated accordingly (to scale images)
+  * image filters
+  * image sharpening
