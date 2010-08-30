@@ -389,13 +389,13 @@ function open_image ($mime_type, $src) {
  */
 function cleanCache() {
 
-    $files = glob(DIRECTORY_CACHE . '/*', GLOB_BRACE);
+    $files = glob (DIRECTORY_CACHE . '/*', GLOB_BRACE);
 
     if (count($files) > 0) {
 
         $yesterday = time() - (24 * 60 * 60);
 
-        usort($files, 'filemtime_compare');
+        usort ($files, 'filemtime_compare');
         $i = 0;
 
         if (count($files) > CACHE_SIZE) {
@@ -430,7 +430,14 @@ function cleanCache() {
  */
 function filemtime_compare($a, $b) {
 
-    return filemtime ($a) - filemtime ($b);
+	$break = explode ('/', $_SERVER['SCRIPT_FILENAME']);
+	$filename = $break[count($break) - 1];
+	$filepath = str_replace ($filename, '', $_SERVER['SCRIPT_FILENAME']);
+
+	$file_a = realpath ($filepath . $a);
+	$file_b = realpath ($filepath . $b);
+
+    return filemtime ($file_a) - filemtime ($file_b);
 
 }
 
