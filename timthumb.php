@@ -550,7 +550,7 @@ function show_cache_file ($mime_type) {
 
         $gmdate_mod = gmdate ("D, d M Y H:i:s", filemtime($cache_file));
 
-        if(! strstr ($gmdate_mod, "GMT")) {
+        if (! strstr ($gmdate_mod, "GMT")) {
             $gmdate_mod .= " GMT";
         }
 
@@ -562,26 +562,25 @@ function show_cache_file ($mime_type) {
             if ($if_modified_since == $gmdate_mod) {
                 header ('HTTP/1.1 304 Not Modified');
                 die();
-            }
+			}
 
-        }
+		}
 
 		clearstatcache ();
-        $fileSize = filesize ($cache_file);
+		$fileSize = filesize ($cache_file);
 
-        // send headers then display image
-        header ('Content-Type: ' . $mime_type);
-        header ('Accept-Ranges: bytes');
-        header ('Last-Modified: ' . $gmdate_mod);
-        header ('Content-Length: ' . $fileSize);
-        header ('Cache-Control: max-age=9999, must-revalidate');
-        header ('Expires: ' . $gmdate_mod);
+		// send headers then display image
+		header ('Content-Type: ' . $mime_type);
+		header ('Accept-Ranges: bytes');
+		header ('Last-Modified: ' . $gmdate_mod);
+		header ('Content-Length: ' . $fileSize);
+		header ('Cache-Control: max-age=9999, must-revalidate');
+		header ('Expires: ' . $gmdate_mod);
 
 		if (!@readfile ($cache_file)) {
 			$content = file_get_contents ($cache_file);
-        	if ($content != FALSE) {
+			if ($content != FALSE) {
 				echo $content;
-				die();
 			} else {
 				displayError ('cache file could not be loaded');
 			}
@@ -792,7 +791,7 @@ function get_document_root ($src) {
         }
     }
 
-    displayError ('file not found ' . $src);
+    displayError ('file not found ' . $src, ENT_QUOTES);
 
 }
 
