@@ -803,7 +803,7 @@ function displayError ($errorString = '') {
 
     header ('HTTP/1.1 400 Bad Request');
 	echo '<pre>' . htmlentities($errorString);
-	echo '<br />Query String : ' . $_SERVER['QUERY_STRING'];
+	echo '<br />Query String : ' . htmlentities($_SERVER['QUERY_STRING']);
 	echo '<br />TimThumb version : ' . VERSION . '</pre>';
     die();
 
