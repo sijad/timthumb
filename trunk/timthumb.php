@@ -389,11 +389,17 @@ function open_image ($mime_type, $src) {
  */
 function cleanCache() {
 
+	// add an escape
+	// Reduces the amount of cache clearing to save some processor speed
+	if (rand (1, 200) > 10) {
+		return true;
+	}
+
     $files = glob (DIRECTORY_CACHE . '/*', GLOB_BRACE);
 
-    if (count($files) > 0) {
+    if (count ($files) > 0) {
 
-        $yesterday = time() - (24 * 60 * 60);
+        $yesterday = time () - (24 * 60 * 60);
 
         usort ($files, 'filemtime_compare');
         $i = 0;
