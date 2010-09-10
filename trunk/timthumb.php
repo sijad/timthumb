@@ -47,7 +47,7 @@ $allowedSites = array (
 
 // check to see if GD function exist
 if (!function_exists('imagecreatetruecolor')) {
-    displayError('GD Library Error: imagecreatetruecolor does not exist - please contact your webhost and ask them to install the GD library');
+    display_error('GD Library Error: imagecreatetruecolor does not exist - please contact your webhost and ask them to install the GD library');
 }
 
 if (function_exists ('imagefilter') && defined ('IMG_FILTER_NEGATE')) {
@@ -69,11 +69,11 @@ if (function_exists ('imagefilter') && defined ('IMG_FILTER_NEGATE')) {
 // sort out image source
 $src = get_request ('src', '');
 if ($src == '' || strlen ($src) <= 3) {
-    displayError ('no image specified');
+    display_error ('no image specified');
 }
 
 // clean params before use
-$src = cleanSource ($src);
+$src = clean_source ($src);
 // last modified time (for caching)
 $lastModified = filemtime ($src);
 
@@ -99,14 +99,14 @@ $mime_type = mime_type ($src);
 check_cache ($mime_type);
 
 // if not in cache then clear some space and generate a new file
-cleanCache();
+clean_cache();
 
 // set memory limit to be able to have enough space to resize larger images
 ini_set ('memory_limit', '50M');
 
 // make sure that the src is gif/jpg/png
 if (!valid_src_mime_type ($mime_type)) {
-    displayError ('Invalid src mime type: ' . $mime_type);
+    display_error ('Invalid src mime type: ' . $mime_type);
 }
 
 if (strlen ($src) && file_exists ($src)) {
@@ -114,7 +114,7 @@ if (strlen ($src) && file_exists ($src)) {
     // open the existing image
     $image = open_image ($mime_type, $src);
     if ($image === false) {
-        displayError ('Unable to open image : ' . $src);
+        display_error ('Unable to open image : ' . $src);
     }
 
     // Get original width and height
@@ -291,9 +291,9 @@ if (strlen ($src) && file_exists ($src)) {
 } else {
 
     if (strlen ($src)) {
-        displayError ('image ' . $src . ' not found');
+        display_error ('image ' . $src . ' not found');
     } else {
-        displayError ('no source specified');
+        display_error ('no source specified');
     }
 
 }
@@ -336,7 +336,7 @@ function show_image ($mime_type, $image_resized) {
 
     imagedestroy ($image_resized);
 
-    //displayError ('error showing image');
+    //display_error ('error showing image');
 
 }
 
@@ -387,7 +387,7 @@ function open_image ($mime_type, $src) {
  * clean out old files from the cache
  * you can change the number of files to store and to delete per loop in the defines at the top of the code
  */
-function cleanCache() {
+function clean_cache() {
 
 	// add an escape
 	// Reduces the amount of cache clearing to save some processor speed
@@ -588,7 +588,7 @@ function show_cache_file ($mime_type) {
 			if ($content != FALSE) {
 				echo $content;
 			} else {
-				displayError ('cache file could not be loaded');
+				display_error ('cache file could not be loaded');
 			}
 		}
 
@@ -639,7 +639,7 @@ function valid_extension ($ext) {
 /**
  *
  */
-function checkExternal ($src) {
+function check_external ($src) {
 
 	global $allowedSites;
 
@@ -681,7 +681,7 @@ function checkExternal ($src) {
 						if (file_exists ($local_filepath)) {
 							unlink ($local_filepath);
 						}
-						displayError ('error reading file ' . $src . ' from remote host: ' . curl_error($ch));
+						display_error ('error reading file ' . $src . ' from remote host: ' . curl_error($ch));
 					}
 
 					curl_close ($ch);
@@ -690,17 +690,17 @@ function checkExternal ($src) {
                 } else {
 
 					if (!$img = file_get_contents($src)) {
-						displayError('remote file for ' . $src . ' can not be accessed. It is likely that the file permissions are restricted');
+						display_error('remote file for ' . $src . ' can not be accessed. It is likely that the file permissions are restricted');
 					}
 
 					if (file_put_contents ($local_filepath, $img) == FALSE) {
-						displayError ('error writing temporary file');
+						display_error ('error writing temporary file');
 					}
 
 				}
 
 				if (!file_exists($local_filepath)) {
-					displayError('local file for ' . $src . ' can not be created');
+					display_error('local file for ' . $src . ' can not be created');
 				}
 
 			}
@@ -709,7 +709,7 @@ function checkExternal ($src) {
 
 		} else {
 
-			displayError('remote host "' . $url_info['host'] . '" not allowed');
+			display_error('remote host "' . $url_info['host'] . '" not allowed');
 
 		}
 
@@ -723,14 +723,14 @@ function checkExternal ($src) {
 /**
  * tidy up the image source url
  */
-function cleanSource ($src) {
+function clean_source ($src) {
 
 	$host = str_replace ('www.', '', $_SERVER['HTTP_HOST']);
 	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "/i";
 
 	$src = preg_replace ($regex, '', $src);
 	$src = strip_tags ($src);
-    $src = checkExternal ($src);
+    $src = check_external ($src);
 
     // remove slash from start of string
     if (strpos ($src, '/') === 0) {
@@ -797,7 +797,7 @@ function get_document_root ($src) {
         }
     }
 
-    displayError ('file not found ' . $src, ENT_QUOTES);
+    display_error ('file not found ' . $src, ENT_QUOTES);
 
 }
 
@@ -805,7 +805,7 @@ function get_document_root ($src) {
 /**
  * generic error message
  */
-function displayError ($errorString = '') {
+function display_error ($errorString = '') {
 
     header ('HTTP/1.1 400 Bad Request');
 	echo '<pre>' . htmlentities($errorString);
