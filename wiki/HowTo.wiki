@@ -1,21 +1,9 @@
 #labels Phase-Deploy
 = Details =
 
-TimThumb.php can be placed in any folder on your site. Upon install, it will automatically create a /cache/ subfolder which must be writable by the server. If your host server doesn't allow this by default, be sure to manually change the /cache/ folder permissions to 777.
+Full documentation on TimThumb can be found on the [http://www.binarymoon.co.uk/projects/timthumb/ TimThumb project page] on my personal site, [http://www.binarymoon.co.uk/ Binary Moon]
 
-TimThumb allows the following parameters:
-
-*  src: location of file from doc root
-
-*  w: width
-
-*  h: height
-
-*  zc: zoom crop (0 or 1)
-
-*  q: quality (default is 75 and max is 100)
-
-
-= Sample Code =
-
-<img src="/scripts/timthumb.php?src=/images/image.jpg&h=150&w=150&zc=1" alt="" />
+  * [http://www.binarymoon.co.uk/2010/08/timthumb/ Getting Started with TimThumb] - [http://www.binarymoon.co.uk/demo/timthumb-basic/ basic examples]
+  * [http://www.binarymoon.co.uk/2010/08/timthumb-part-2-external-websites/ Resizing External Images] - [http://www.binarymoon.co.uk/demo/timthumb-external/ external images demo]
+  * [http://www.binarymoon.co.uk/2010/08/timthumb-image-filters/ Image Filters and Editing] - [http://www.binarymoon.co.uk/demo/timthumb-filters/ filters sample]
+  * [http://www.binarymoon.co.uk/2010/08/timthumb-part-4-moving-crop-location/ Changing the Image Cropping Location] - [http://www.binarymoon.co.uk/demo/timthumb-cropping/ crop location demo]
