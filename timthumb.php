@@ -22,8 +22,8 @@ $sizeLimits = array(
 );
 */
 
-error_reporting(E_ALL);
-ini_set("display_errors", 1);
+//error_reporting(E_ALL);
+//ini_set("display_errors", 1);
 
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
@@ -31,6 +31,8 @@ define ('CACHE_USE', FALSE);				// use the cache files? (mostly for testing)
 define ('VERSION', '1.15');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('DIRECTORY_TEMP', './temp');		// temp directory
+define ('MAX_WIDTH', 1000);					// maximum image width
+define ('MAX_HEIGHT', 1000);				// maximum image height
 
 // 	external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -90,6 +92,15 @@ $sharpen = get_request ('s', 0);
 if ($new_width == 0 && $new_height == 0) {
     $new_width = 100;
     $new_height = 100;
+}
+
+// ensure size limits can not be abused
+if ($new_width > MAX_WIDTH) {
+	$new_width = MAX_WIDTH;
+}
+
+if ($new_height > MAX_HEIGHT) {
+	$new_height = MAX_HEIGHT;
 }
 
 // get mime type of src
@@ -267,12 +278,12 @@ if (strlen ($src) && file_exists ($src)) {
         }
     }
 
-	if ($sharpen > 0 && function_exists('imageconvolution')) {
+	if ($sharpen > 0 && function_exists ('imageconvolution')) {
 
-		$sharpenMatrix = array(
-			array(-1,-1,-1),
-			array(-1,16,-1),
-			array(-1,-1,-1),
+		$sharpenMatrix = array (
+			array (-1,-1,-1),
+			array (-1,16,-1),
+			array (-1,-1,-1),
 		);
 
 		$divisor = 8;
@@ -343,9 +354,9 @@ function show_image ($mime_type, $image_resized) {
 /**
  *
  */
-function get_request( $property, $default = 0 ) {
+function get_request ($property, $default = 0) {
 
-    if( isset($_REQUEST[$property]) ) {
+    if (isset($_REQUEST[$property])) {
 
         return $_REQUEST[$property];
 
