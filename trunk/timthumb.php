@@ -402,40 +402,36 @@ function clean_cache() {
 
 	// add an escape
 	// Reduces the amount of cache clearing to save some processor speed
-	if (rand (1, 200) > 10) {
+	if (rand (1, 100) > 10) {
 		return true;
 	}
 
     $files = glob (DIRECTORY_CACHE . '/*', GLOB_BRACE);
 
-    if (count ($files) > 0) {
-
+	if (count($files) > CACHE_SIZE) {
+		
         $yesterday = time () - (24 * 60 * 60);
 
         usort ($files, 'filemtime_compare');
         $i = 0;
 
-        if (count($files) > CACHE_SIZE) {
+		foreach ($files as $file) {
 
-            foreach ($files as $file) {
+			$i ++;
 
-                $i ++;
+			if ($i >= CACHE_CLEAR) {
+				return;
+			}
 
-                if ($i >= CACHE_CLEAR) {
-                    return;
-                }
+			if (@filemtime($file) > $yesterday) {
+				return;
+			}
 
-                if (@filemtime($file) > $yesterday) {
-                    return;
-                }
+			if (file_exists($file)) {
+				unlink($file);
+			}
 
-				if (file_exists($file)) {
-					unlink($file);
-				}
-
-            }
-
-        }
+		}
 
     }
 
@@ -558,6 +554,7 @@ function check_cache ($mime_type) {
 
 /**
  *
+ * @param <type> $mime_type 
  */
 function show_cache_file ($mime_type) {
 
