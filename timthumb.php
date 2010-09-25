@@ -28,7 +28,7 @@ $sizeLimits = array(
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', FALSE);				// use the cache files? (mostly for testing)
-define ('VERSION', '1.15');					// version number (to force a cache refresh)
+define ('VERSION', '1.16');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('DIRECTORY_TEMP', './temp');		// temp directory
 define ('MAX_WIDTH', 1000);					// maximum image width
@@ -528,7 +528,7 @@ function show_cache_file ($mime_type) {
 		clearstatcache ();
 		$fileSize = filesize ($cache_file);
 
-		$gmdate_expires = gmdate('D, d M Y H:i:s GMT', strtotime('+10 days'));
+		$gmdate_expires = gmdate('D, d M Y H:i:s GMT', strtotime('now +10 days'));
 		$gmdate_modified = gmdate('D, d M Y H:i:s GMT');
 
 		// send headers then display image
@@ -536,7 +536,7 @@ function show_cache_file ($mime_type) {
 		header ('Accept-Ranges: bytes');
 		header ('Last-Modified: ' . $gmdate_modified);
 		header ('Content-Length: ' . $fileSize);
-		header ('Cache-Control: max-age=9999, must-revalidate');
+		header ('Cache-Control: max-age=864000, must-revalidate');
 		header ('Expires: ' . $gmdate_expires);
 
 		if (!@readfile ($cache_file)) {
