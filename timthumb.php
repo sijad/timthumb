@@ -115,11 +115,6 @@ clean_cache();
 // set memory limit to be able to have enough space to resize larger images
 ini_set ('memory_limit', '50M');
 
-// make sure that the src is gif/jpg/png
-if (!valid_src_mime_type ($mime_type)) {
-    display_error ('Invalid src mime type: ' . $mime_type);
-}
-
 if (strlen ($src) && file_exists ($src)) {
 
     // open the existing image
@@ -311,6 +306,9 @@ if (strlen ($src) && file_exists ($src)) {
 
 /**
  *
+ * @global <type> $quality
+ * @param <type> $mime_type
+ * @param <type> $image_resized 
  */
 function show_image ($mime_type, $image_resized) {
 
@@ -347,18 +345,20 @@ function show_image ($mime_type, $image_resized) {
 
     imagedestroy ($image_resized);
 
-    //display_error ('error showing image');
-
 }
+
 
 /**
  *
+ * @param <type> $property
+ * @param <type> $default
+ * @return <type> 
  */
 function get_request ($property, $default = 0) {
 
-    if (isset($_REQUEST[$property])) {
+    if (isset($_GET[$property])) {
 
-        return $_REQUEST[$property];
+        return $_GET[$property];
 
     } else {
 
@@ -368,8 +368,12 @@ function get_request ($property, $default = 0) {
 
 }
 
+
 /**
  *
+ * @param <type> $mime_type
+ * @param <type> $src
+ * @return <type>
  */
 function open_image ($mime_type, $src) {
 
@@ -381,7 +385,6 @@ function open_image ($mime_type, $src) {
 
     } elseif (stristr ($mime_type, 'jpeg')) {
 
-        @ini_set ('gd.jpeg_ignore_warning', 1);
         $image = imagecreatefromjpeg($src);
 
     } elseif (stristr ($mime_type, 'png')) {
@@ -397,6 +400,8 @@ function open_image ($mime_type, $src) {
 /**
  * clean out old files from the cache
  * you can change the number of files to store and to delete per loop in the defines at the top of the code
+ *
+ * @return <type>
  */
 function clean_cache() {
 
@@ -423,12 +428,12 @@ function clean_cache() {
 				return;
 			}
 
-			if (@filemtime($file) > $yesterday) {
+			if (@filemtime ($file) > $yesterday) {
 				return;
 			}
 
-			if (file_exists($file)) {
-				unlink($file);
+			if (file_exists ($file)) {
+				unlink ($file);
 			}
 
 		}
@@ -440,6 +445,10 @@ function clean_cache() {
 
 /**
  * compare the file time of two files
+ *
+ * @param <type> $a
+ * @param <type> $b
+ * @return <type>
  */
 function filemtime_compare($a, $b) {
 
@@ -457,60 +466,18 @@ function filemtime_compare($a, $b) {
 
 /**
  * determine the file mime type
+ *
+ * @param <type> $file
+ * @return <type>
  */
 function mime_type ($file) {
 
-    if (stristr (PHP_OS, 'WIN')) {
-        $os = 'WIN';
-    } else {
-        $os = PHP_OS;
-    }
+	$file_infos = getimagesize ($file);
+	$mime_type = $file_infos['mime'];
 
-    $mime_type = '';
-
-    if (function_exists ('mime_content_type') && $os != 'WIN') {
-        $mime_type = mime_content_type ($file);
-    }
-
-	// use PECL fileinfo to determine mime type
-	if (!valid_src_mime_type ($mime_type)) {
-		if (function_exists ('finfo_open')) {
-			$finfo = @finfo_open (FILEINFO_MIME);
-			if ($finfo != '') {
-				$mime_type = finfo_file ($finfo, $file);
-				finfo_close ($finfo);
-			}
-		}
-	}
-
-    // try to determine mime type by using unix file command
-    // this should not be executed on windows
-    if (!valid_src_mime_type ($mime_type) && $os != "WIN") {
-        if (preg_match ("/FreeBSD|FREEBSD|LINUX/", $os)) {
-			$mime_type = trim (@shell_exec ('file -bi ' . escapeshellarg($file)));
-        }
-    }
-
-    // use file's extension to determine mime type
-    if (!valid_src_mime_type ($mime_type)) {
-
-        // set defaults
-        $mime_type = 'image/png';
-        // file details
-        $fileDetails = pathinfo ($file);
-        $ext = strtolower ($fileDetails["extension"]);
-        // mime types
-        $types = array (
-             'jpg'  => 'image/jpeg',
-             'jpeg' => 'image/jpeg',
-             'png'  => 'image/png',
-             'gif'  => 'image/gif'
-         );
-
-        if (strlen ($ext) && strlen ($types[$ext])) {
-            $mime_type = $types[$ext];
-        }
-
+    // use mime_type to determine mime type
+    if (!preg_match ("/jpg|jpeg|gif|png/i", $mime_type)) {
+		display_error ('Invalid src mime type: ' . $mime_type);
     }
 
     return $mime_type;
@@ -520,20 +487,7 @@ function mime_type ($file) {
 
 /**
  *
- */
-function valid_src_mime_type ($mime_type) {
-
-    if (preg_match ("/jpg|jpeg|gif|png/i", $mime_type)) {
-        return true;
-    }
-
-    return false;
-
-}
-
-
-/**
- *
+ * @param <type> $mime_type
  */
 function check_cache ($mime_type) {
 
@@ -603,6 +557,10 @@ function show_cache_file ($mime_type) {
 
 /**
  *
+ * @global <type> $lastModified
+ * @staticvar string $cache_file
+ * @param <type> $mime_type
+ * @return string
  */
 function get_cache_file ($mime_type) {
 
@@ -625,21 +583,10 @@ function get_cache_file ($mime_type) {
 
 
 /**
- * check to if the url is valid or not
- */
-function valid_extension ($ext) {
-
-    if (preg_match ("/jpg|jpeg|png|gif/i", $ext)) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-
-}
-
-
-/**
  *
+ * @global array $allowedSites
+ * @param string $src
+ * @return string
  */
 function check_external ($src) {
 
@@ -724,6 +671,9 @@ function check_external ($src) {
 
 /**
  * tidy up the image source url
+ *
+ * @param <type> $src
+ * @return string
  */
 function clean_source ($src) {
 
@@ -753,6 +703,8 @@ function clean_source ($src) {
 
 /**
  *
+ * @param <type> $src
+ * @return string
  */
 function get_document_root ($src) {
 
@@ -806,6 +758,8 @@ function get_document_root ($src) {
 
 /**
  * generic error message
+ *
+ * @param <type> $errorString
  */
 function display_error ($errorString = '') {
 
