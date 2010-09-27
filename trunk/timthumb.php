@@ -62,6 +62,7 @@ if ($src == '' || strlen ($src) <= 3) {
 
 // clean params before use
 $src = clean_source ($src);
+
 // last modified time (for caching)
 $lastModified = filemtime ($src);
 
@@ -321,15 +322,12 @@ function show_image ($mime_type, $image_resized) {
 	if (stristr ($mime_type, 'jpeg')) {
 		imagejpeg ($image_resized, $cache_file, $quality);
 	} else {
-		$quality = floor ($quality * 0.09);
-		imagepng ($image_resized, $cache_file, $quality);
+		imagepng ($image_resized, $cache_file, floor ($quality * 0.09));
     }
 
     if ($is_writable) {
         show_cache_file ($mime_type);
     }
-
-    imagedestroy ($image_resized);
 
 }
 
@@ -502,22 +500,22 @@ function show_cache_file ($mime_type) {
 
     if (file_exists ($cache_file)) {
 
+		// use browser cache if available to speed up page load
         if (isset ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-
             if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime('now')) {
                 header ('HTTP/1.1 304 Not Modified');
                 die();
 			}
-
 		}
 
 		clearstatcache ();
 		$fileSize = filesize ($cache_file);
 
+		// change the modified headers
 		$gmdate_expires = gmdate('D, d M Y H:i:s', strtotime('now +10 days')) . ' GMT';
 		$gmdate_modified = gmdate('D, d M Y H:i:s') . ' GMT';
 
-		// send headers then display image
+		// send content headers then display image
 		header ('Content-Type: ' . $mime_type);
 		header ('Accept-Ranges: bytes');
 		header ('Last-Modified: ' . $gmdate_modified);
@@ -534,6 +532,7 @@ function show_cache_file ($mime_type) {
 			}
 		}
 
+		// we've shown the image so stop processing
         die();
 
     }
@@ -756,4 +755,5 @@ function display_error ($errorString = '') {
     die();
 
 }
+
 ?>
