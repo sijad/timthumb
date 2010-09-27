@@ -1,29 +1,15 @@
 <?php
-/*
-    TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks
-    http://code.google.com/p/timthumb/
-
-    MIT License: http://www.opensource.org/licenses/mit-license.php
-
-    Paramters
-    ---------
-    w: width
-    h: height
-    zc: zoom crop (0 or 1)
-    q: quality (default is 75 and max is 100)
-
-    HTML example: <img src="/scripts/timthumb.php?src=/images/whatever.jpg&w=150&h=200&zc=1" alt="" />
-*/
-
-/*
-$sizeLimits = array(
-    "100x100",
-    "150x150",
-);
-*/
-
-//error_reporting(E_ALL);
-//ini_set("display_errors", 1);
+/**
+ * TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks
+ * http://code.google.com/p/timthumb/
+ * 
+ * GNU General Public License, version 2
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ *
+ * Examples and documentation available on the project homepage
+ * http://www.binarymoon.co.uk/projects/timthumb/
+ *
+ */
 
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
@@ -34,7 +20,7 @@ define ('DIRECTORY_TEMP', './temp');		// temp directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
 
-// 	external domains that are allowed to be displayed on your website
+// external domains that are allowed to be displayed on your website
 $allowedSites = array (
 	'flickr.com',
 	'picasa.com',
@@ -528,8 +514,8 @@ function show_cache_file ($mime_type) {
 		clearstatcache ();
 		$fileSize = filesize ($cache_file);
 
-		$gmdate_expires = gmdate('D, d M Y H:i:s GMT', strtotime('now +10 days'));
-		$gmdate_modified = gmdate('D, d M Y H:i:s GMT');
+		$gmdate_expires = gmdate('D, d M Y H:i:s', strtotime('now +10 days')) . ' GMT';
+		$gmdate_modified = gmdate('D, d M Y H:i:s') . ' GMT';
 
 		// send headers then display image
 		header ('Content-Type: ' . $mime_type);
