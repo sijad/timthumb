@@ -3,14 +3,15 @@ Below is a list of features that 'may' be implemented at some unspecified stage 
 ==Wishes==
 
   * increase memory usage for large images (user definable)
-  * user definable image size limits (to prevent malicious usage)
   * allow for disabling of image output. Will allow image resizing (pre-caching) without display. Good for administration and batch processing
   * default image for broken image urls
   * option to crop and not scale
   * optional settings file
+  * watermark (user definable text in bottom right)
 
 ==Wish Granted==
 
+  * user definable image size limits (to prevent malicious usage)
   * clear out cached image if image has been replaced
   * user definable external sites to resize images from other domains
   * support transparency in images (png and gif)
