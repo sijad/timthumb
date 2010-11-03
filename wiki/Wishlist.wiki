@@ -8,6 +8,7 @@ Below is a list of features that 'may' be implemented at some unspecified stage 
   * option to crop and not scale
   * optional settings file
   * watermark (user definable text in bottom right)
+  * user definable percentage for crop location (as detailed on [http://www.binarymoon.co.uk/2010/08/timthumb-part-4-moving-crop-location/comment-page-1/#comment-31799 Binary Moon])
 
 ==Wish Granted==
 
