@@ -1,6 +1,6 @@
 <?php
 /**
- * TimThumb script created by Tim McDaniels and Darren Hoyt with tweaks by Ben Gillbanks
+ * TimThumb script created by Ben Gillbanks, originally created by Tim McDaniels and Darren Hoyt
  * http://code.google.com/p/timthumb/
  * 
  * GNU General Public License, version 2
@@ -8,7 +8,6 @@
  *
  * Examples and documentation available on the project homepage
  * http://www.binarymoon.co.uk/projects/timthumb/
- *
  */
 
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
@@ -19,6 +18,7 @@ define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('DIRECTORY_TEMP', './temp');		// temp directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
+define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -34,8 +34,8 @@ $allowedSites = array (
 // --------------------
 
 // check to see if GD function exist
-if (!function_exists('imagecreatetruecolor')) {
-    display_error('GD Library Error: imagecreatetruecolor does not exist - please contact your webhost and ask them to install the GD library');
+if (!function_exists ('imagecreatetruecolor')) {
+    display_error ('GD Library Error: imagecreatetruecolor does not exist - please contact your webhost and ask them to install the GD library');
 }
 
 if (function_exists ('imagefilter') && defined ('IMG_FILTER_NEGATE')) {
@@ -67,10 +67,10 @@ $src = clean_source ($src);
 $lastModified = filemtime ($src);
 
 // get standard input properties
-$new_width = preg_replace ("/[^0-9]+/", '', get_request('w', 0));
-$new_height = preg_replace ("/[^0-9]+/", '', get_request('h', 0));
-$zoom_crop = preg_replace ("/[^0-9]+/", '', get_request('zc', 1));
-$quality = preg_replace ("/[^0-9]+/", '', get_request('q', 90));
+$new_width = preg_replace ("/[^0-9]+/", '', get_request ('w', 0));
+$new_height = preg_replace ("/[^0-9]+/", '', get_request ('h', 0));
+$zoom_crop = preg_replace ("/[^0-9]+/", '', get_request ('zc', 1));
+$quality = preg_replace ("/[^0-9]+/", '', get_request ('q', 90));
 $align = get_request ('a', 'c');
 $filters = get_request ('f', '');
 $sharpen = get_request ('s', 0);
@@ -97,7 +97,7 @@ $mime_type = mime_type ($src);
 check_cache ($mime_type);
 
 // if not in cache then clear some space and generate a new file
-clean_cache();
+clean_cache ();
 
 // set memory limit to be able to have enough space to resize larger images
 ini_set ('memory_limit', '50M');
@@ -581,6 +581,16 @@ function check_external ($src) {
 
         $url_info = parse_url ($src);
 
+		// convert youtube video urls
+		// need to tidy up the code
+		parse_str($url_info['query']);
+
+		if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
+			$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
+			$url_info['host'] = 'img.youtube.com';
+		}
+
+		// check allowed sites
         $isAllowedSite = false;
         foreach ($allowedSites as $site) {
 			$site = '/' . addslashes ($site) . '/';
@@ -589,6 +599,7 @@ function check_external ($src) {
             }
 		}
 
+		// if allowed
 		if ($isAllowedSite) {
 
 			$fileDetails = pathinfo ($src);
@@ -608,6 +619,7 @@ function check_external ($src) {
 					curl_setopt ($ch, CURLOPT_RETURNTRANSFER, TRUE);
 					curl_setopt ($ch, CURLOPT_FOLLOWLOCATION, 1);
 					curl_setopt ($ch, CURLOPT_HEADER, 0);
+					curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 					curl_setopt ($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0');
 					curl_setopt ($ch, CURLOPT_FILE, $fh);
 
@@ -667,6 +679,7 @@ function clean_source ($src) {
 
 	$src = preg_replace ($regex, '', $src);
 	$src = strip_tags ($src);
+	$src = str_replace (' ', '%20', $src);
     $src = check_external ($src);
 
     // remove slash from start of string
