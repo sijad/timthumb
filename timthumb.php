@@ -72,7 +72,7 @@ $zoom_crop = (int) get_request ('zc', 1);
 $quality = (int) get_request ('q', 90);
 $align = get_request ('a', 'c');
 $filters = get_request ('f', '');
-$sharpen = get_request ('s', 0);
+$sharpen = (bool) get_request ('s', 0);
 
 // set default width and height if neither are set already
 if ($new_width == 0 && $new_height == 0) {
@@ -259,7 +259,7 @@ if (file_exists ($src)) {
         }
     }
 
-	if ($sharpen > 0 && function_exists ('imageconvolution')) {
+	if ($sharpen && function_exists ('imageconvolution')) {
 
 		$sharpenMatrix = array (
 			array (-1,-1,-1),
@@ -734,16 +734,16 @@ function get_document_root ($src) {
     // specifically if installed in wordpress themes like mimbo pro:
     // /wp-content/themes/mimbopro/scripts/timthumb.php
     $paths = array (
-        ".",
-        "..",
-        "../..",
-        "../../..",
-        "../../../..",
-        "../../../../.."
+        "./",
+        "../",
+        "../../",
+        "../../../",
+        "../../../../",
+        "../../../../../"
     );
 
     foreach ($paths as $path) {
-        if (file_exists($path . '/' . $src)) {
+        if (file_exists($path . $src)) {
             return $path;
         }
     }
