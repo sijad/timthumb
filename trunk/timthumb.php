@@ -12,7 +12,7 @@
 
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
-define ('CACHE_USE', FALSE);				// use the cache files? (mostly for testing)
+define ('CACHE_USE', TRUE);				// use the cache files? (mostly for testing)
 define ('VERSION', '1.16');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('DIRECTORY_TEMP', './temp');		// temp directory
@@ -28,7 +28,6 @@ $allowedSites = array (
 	'wordpress.com',
 	'img.youtube.com',
 );
-
 
 // STOP MODIFYING HERE!
 // --------------------
