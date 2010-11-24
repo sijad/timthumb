@@ -12,8 +12,8 @@
 
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
-define ('CACHE_USE', TRUE);				// use the cache files? (mostly for testing)
-define ('VERSION', '1.16');					// version number (to force a cache refresh)
+define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
+define ('VERSION', '1.17');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('DIRECTORY_TEMP', './temp');		// temp directory
 define ('MAX_WIDTH', 1000);					// maximum image width
