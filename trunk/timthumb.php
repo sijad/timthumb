@@ -507,7 +507,6 @@ function show_cache_file ($mime_type) {
 			}
 		}
 
-		clearstatcache ();
 		$fileSize = filesize ($cache_file);
 
 		// change the modified headers
