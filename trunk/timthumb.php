@@ -67,10 +67,10 @@ $src = clean_source ($src);
 $lastModified = filemtime ($src);
 
 // get standard input properties
-$new_width = preg_replace ("/[^0-9]+/", '', get_request ('w', 0));
-$new_height = preg_replace ("/[^0-9]+/", '', get_request ('h', 0));
-$zoom_crop = preg_replace ("/[^0-9]+/", '', get_request ('zc', 1));
-$quality = preg_replace ("/[^0-9]+/", '', get_request ('q', 90));
+$new_width =  (int) get_request ('w', 0);
+$new_height = (int) get_request ('h', 0);
+$zoom_crop = (int) get_request ('zc', 1);
+$quality = (int) get_request ('q', 90);
 $align = get_request ('a', 'c');
 $filters = get_request ('f', '');
 $sharpen = get_request ('s', 0);
@@ -102,7 +102,7 @@ clean_cache ();
 // set memory limit to be able to have enough space to resize larger images
 ini_set ('memory_limit', '50M');
 
-if (strlen ($src) && file_exists ($src)) {
+if (file_exists ($src)) {
 
     // open the existing image
     $image = open_image ($mime_type, $src);
@@ -387,7 +387,7 @@ function open_image ($mime_type, $src) {
  *
  * @return <type>
  */
-function clean_cache() {
+function clean_cache () {
 
 	// add an escape
 	// Reduces the amount of cache clearing to save some processor speed
@@ -583,20 +583,31 @@ function check_external ($src) {
 
 		// convert youtube video urls
 		// need to tidy up the code
-		parse_str($url_info['query']);
-
+		
 		if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
-			$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
-			$url_info['host'] = 'img.youtube.com';
+			parse_str($url_info['query']);
+
+			if (isset($v)) {
+				$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
+				$url_info['host'] = 'img.youtube.com';
+			}
 		}
 
-		// check allowed sites
-        $isAllowedSite = false;
-        foreach ($allowedSites as $site) {
-			$site = '/' . addslashes ($site) . '/';
-            if (preg_match ($site, $url_info['host']) == true) {
-                $isAllowedSite = true;
-            }
+		// check allowed sites (if required)
+		if (ALLOW_EXTERNAL) {
+
+			$isAllowedSite = true;
+
+		} else {
+
+			$isAllowedSite = false;
+			foreach ($allowedSites as $site) {
+				$site = '/' . addslashes ($site) . '/';
+				if (preg_match ($site, $url_info['host']) == true) {
+					$isAllowedSite = true;
+				}
+			}
+			
 		}
 
 		// if allowed
