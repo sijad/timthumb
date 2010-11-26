@@ -32,6 +32,23 @@ $allowedSites = array (
 // STOP MODIFYING HERE!
 // --------------------
 
+// sort out image source
+$src = get_request ('src', '');
+if ($src == '' || strlen ($src) <= 3) {
+    display_error ('no image specified');
+}
+
+// clean params before use
+$src = clean_source ($src);
+
+// get mime type of src
+$mime_type = mime_type ($src);
+
+// check to see if this image is in the cache already
+// if already cached then display the image and die
+check_cache ($mime_type);
+
+// cache doesn't exist and then process everything
 // check to see if GD function exist
 if (!function_exists ('imagecreatetruecolor')) {
     display_error ('GD Library Error: imagecreatetruecolor does not exist - please contact your webhost and ask them to install the GD library');
@@ -53,18 +70,6 @@ if (function_exists ('imagefilter') && defined ('IMG_FILTER_NEGATE')) {
 	);
 }
 
-// sort out image source
-$src = get_request ('src', '');
-if ($src == '' || strlen ($src) <= 3) {
-    display_error ('no image specified');
-}
-
-// clean params before use
-$src = clean_source ($src);
-
-// last modified time (for caching)
-$lastModified = filemtime ($src);
-
 // get standard input properties
 $new_width =  (int) abs (get_request ('w', 0));
 $new_height = (int) abs (get_request ('h', 0));
@@ -84,15 +89,6 @@ if ($new_width == 0 && $new_height == 0) {
 $new_width = min ($new_width, MAX_WIDTH);
 $new_height = min ($new_height, MAX_HEIGHT);
 
-// get mime type of src
-$mime_type = mime_type ($src);
-
-// check to see if this image is in the cache already
-check_cache ($mime_type);
-
-// if not in cache then clear some space and generate a new file
-clean_cache ();
-
 // set memory limit to be able to have enough space to resize larger images
 ini_set ('memory_limit', '50M');
 
@@ -111,50 +107,48 @@ if (file_exists ($src)) {
     // generate new w/h if not provided
     if ($new_width && !$new_height) {
 
-        $new_height = $height * ($new_width / $width);
+        $new_height = floor ($height * ($new_width / $width));
 
-    } elseif ($new_height && !$new_width) {
+    } else if ($new_height && !$new_width) {
 
-        $new_width = $width * ($new_height / $height);
-
-    } elseif (!$new_width && !$new_height) {
-
-        $new_width = $width;
-        $new_height = $height;
+        $new_width = floor ($width * ($new_height / $height));
 
     }
 
-    // create a new true color image
-    $canvas = imagecreatetruecolor ($new_width, $new_height);
-    imagealphablending ($canvas, false);
-    // Create a new transparent color for image
-    $color = imagecolorallocatealpha ($canvas, 0, 0, 0, 127);
-    // Completely fill the background of the new image with allocated color.
-    imagefill ($canvas, 0, 0, $color);
-    // Restore transparency blending
-    imagesavealpha ($canvas, true);
+	// create a new true color image
+	$canvas = imagecreatetruecolor ($new_width, $new_height);
+	imagealphablending ($canvas, false);
 
-    if ($zoom_crop) {
+	// Create a new transparent color for image
+	$color = imagecolorallocatealpha ($canvas, 0, 0, 0, 127);
 
-        $src_x = $src_y = 0;
-        $src_w = $width;
-        $src_h = $height;
+	// Completely fill the background of the new image with allocated color.
+	imagefill ($canvas, 0, 0, $color);
 
-        $cmp_x = $width  / $new_width;
-        $cmp_y = $height / $new_height;
+	// Restore transparency blending
+	imagesavealpha ($canvas, true);
 
-        // calculate x or y coordinate and width or height of source
+	if ($zoom_crop) {
+
+		$src_x = $src_y = 0;
+		$src_w = $width;
+		$src_h = $height;
+
+		$cmp_x = $width / $new_width;
+		$cmp_y = $height / $new_height;
+
+		// calculate x or y coordinate and width or height of source
 		if ($cmp_x > $cmp_y) {
 
-            $src_w = round (($width / $cmp_x * $cmp_y));
-            $src_x = round (($width - ($width / $cmp_x * $cmp_y)) / 2);
+			$src_w = round (($width / $cmp_x * $cmp_y));
+			$src_x = round (($width - ($width / $cmp_x * $cmp_y)) / 2);
 
-        } elseif ($cmp_y > $cmp_x) {
+		} else if ($cmp_y > $cmp_x) {
 
-            $src_h = round (($height / $cmp_y * $cmp_x));
-            $src_y = round (($height - ($height / $cmp_y * $cmp_x)) / 2);
+			$src_h = round (($height / $cmp_y * $cmp_x));
+			$src_y = round (($height - ($height / $cmp_y * $cmp_x)) / 2);
 
-        }
+		}
 
 		// positional cropping!
 		switch ($align) {
@@ -189,11 +183,9 @@ if (file_exists ($src)) {
 			case 'rb':
 				$src_x = $width - $new_width;
 				$src_x = $width - $src_w;
-
 				break;
 
 			default:
-
 				break;
 		}
 
@@ -254,6 +246,7 @@ if (file_exists ($src)) {
         }
     }
 
+	// sharpen image
 	if ($sharpen && function_exists ('imageconvolution')) {
 
 		$sharpenMatrix = array (
@@ -275,6 +268,11 @@ if (file_exists ($src)) {
     // remove image from memory
     imagedestroy ($canvas);
 
+	// if not in cache then clear some space and generate a new file
+	clean_cache ();
+
+	die ();
+
 } else {
 
     if (strlen ($src)) {
@@ -284,6 +282,7 @@ if (file_exists ($src)) {
     }
 
 }
+
 
 /**
  *
@@ -296,32 +295,15 @@ function show_image ($mime_type, $image_resized) {
     global $quality;
 
     // check to see if we can write to the cache directory
-    $is_writable = 0;
     $cache_file = get_cache_file ($mime_type);
-
-    if (touch ($cache_file)) {
-
-        // give 666 permissions so that the developer
-        // can overwrite web server user
-        chmod ($cache_file, 0666);
-        $is_writable = 1;
-
-    } else {
-
-        $cache_file = NULL;
-        header ('Content-type: ' . $mime_type);
-
-    }
 
 	if (stristr ($mime_type, 'jpeg')) {
 		imagejpeg ($image_resized, $cache_file, $quality);
 	} else {
 		imagepng ($image_resized, $cache_file, floor ($quality * 0.09));
-    }
+	}
 
-    if ($is_writable) {
-        show_cache_file ($mime_type);
-    }
+	show_cache_file ($mime_type);
 
 }
 
@@ -389,6 +371,8 @@ function clean_cache () {
 		return true;
 	}
 
+	flush ();
+
     $files = glob (DIRECTORY_CACHE . '/*', GLOB_BRACE);
 
 	if (count($files) > CACHE_SIZE) {
@@ -428,7 +412,7 @@ function clean_cache () {
  * @param <type> $b
  * @return <type>
  */
-function filemtime_compare($a, $b) {
+function filemtime_compare ($a, $b) {
 
 	$break = explode ('/', $_SERVER['SCRIPT_FILENAME']);
 	$filename = $break[count($break) - 1];
@@ -470,15 +454,17 @@ function mime_type ($file) {
 function check_cache ($mime_type) {
 
 	if (CACHE_USE) {
-		// make sure cache dir exists
-		if (!file_exists (DIRECTORY_CACHE)) {
-			// give 777 permissions so that developer can overwrite
-			// files created by web server user
-			mkdir (DIRECTORY_CACHE);
-			chmod (DIRECTORY_CACHE, 0777);
+
+		if (!show_cache_file ($mime_type)) {
+			// make sure cache dir exists
+			if (!file_exists (DIRECTORY_CACHE)) {
+				// give 777 permissions so that developer can overwrite
+				// files created by web server user
+				mkdir (DIRECTORY_CACHE);
+				chmod (DIRECTORY_CACHE, 0777);
+			}
 		}
 
-		show_cache_file ($mime_type);
 	}
 
 }
@@ -486,33 +472,32 @@ function check_cache ($mime_type) {
 
 /**
  *
- * @param <type> $mime_type 
+ * @param <type> $mime_type
+ * @return <type> 
  */
 function show_cache_file ($mime_type) {
 
-    $cache_file = get_cache_file ($mime_type);
-
-    if (file_exists ($cache_file)) {
-
-		// use browser cache if available to speed up page load
-        if (isset ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-            if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime('now')) {
-                header ('HTTP/1.1 304 Not Modified');
-                die();
-			}
+	// use browser cache if available to speed up page load
+	if (isset ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime('now')) {
+			header ('HTTP/1.1 304 Not Modified');
+			die ();
 		}
+	}
 
-		$fileSize = filesize ($cache_file);
+	$cache_file = get_cache_file ($mime_type);
+
+	if (file_exists ($cache_file)) {
 
 		// change the modified headers
-		$gmdate_expires = gmdate('D, d M Y H:i:s', strtotime('now +10 days')) . ' GMT';
-		$gmdate_modified = gmdate('D, d M Y H:i:s') . ' GMT';
+		$gmdate_expires = gmdate ('D, d M Y H:i:s', strtotime ('now +10 days')) . ' GMT';
+		$gmdate_modified = gmdate ('D, d M Y H:i:s') . ' GMT';
 
 		// send content headers then display image
 		header ('Content-Type: ' . $mime_type);
 		header ('Accept-Ranges: bytes');
 		header ('Last-Modified: ' . $gmdate_modified);
-		header ('Content-Length: ' . $fileSize);
+		header ('Content-Length: ' . filesize ($cache_file));
 		header ('Cache-Control: max-age=864000, must-revalidate');
 		header ('Expires: ' . $gmdate_expires);
 
@@ -525,25 +510,25 @@ function show_cache_file ($mime_type) {
 			}
 		}
 
-		// we've shown the image so stop processing
-        die();
+		die ();
 
     }
+
+	return FALSE;
 
 }
 
 
 /**
  *
- * @global <type> $lastModified
  * @staticvar string $cache_file
  * @param <type> $mime_type
  * @return string
  */
 function get_cache_file ($mime_type) {
 
-    global $lastModified;
     static $cache_file;
+	global $src;
 
 	$file_type = '.png';
 
@@ -552,7 +537,8 @@ function get_cache_file ($mime_type) {
     }
 
     if (!$cache_file) {
-        $cache_file = DIRECTORY_CACHE . '/' . md5 ($_SERVER ['QUERY_STRING'] . VERSION . $lastModified) . $file_type;
+		// filemtime is used to make sure updated files get recached
+        $cache_file = DIRECTORY_CACHE . '/' . md5 ($_SERVER ['QUERY_STRING'] . VERSION . filemtime ($src)) . $file_type;
     }
 
     return $cache_file;
@@ -578,7 +564,7 @@ function check_external ($src) {
 		// need to tidy up the code
 		
 		if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
-			parse_str($url_info['query']);
+			parse_str ($url_info['query']);
 
 			if (isset($v)) {
 				$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
@@ -640,7 +626,7 @@ function check_external ($src) {
                 } else {
 
 					if (!$img = file_get_contents($src)) {
-						display_error('remote file for ' . $src . ' can not be accessed. It is likely that the file permissions are restricted');
+						display_error ('remote file for ' . $src . ' can not be accessed. It is likely that the file permissions are restricted');
 					}
 
 					if (file_put_contents ($local_filepath, $img) == FALSE) {
@@ -649,8 +635,8 @@ function check_external ($src) {
 
 				}
 
-				if (!file_exists($local_filepath)) {
-					display_error('local file for ' . $src . ' can not be created');
+				if (!file_exists ($local_filepath)) {
+					display_error ('local file for ' . $src . ' can not be created');
 				}
 
 			}
@@ -659,7 +645,7 @@ function check_external ($src) {
 
 		} else {
 
-			display_error('remote host "' . $url_info['host'] . '" not allowed');
+			display_error ('remote host "' . $url_info['host'] . '" not allowed');
 
 		}
 
@@ -716,11 +702,11 @@ function get_document_root ($src) {
     }
 
     // check from script filename (to get all directories to timthumb location)
-    $parts = array_diff (explode ('/', $_SERVER['SCRIPT_FILENAME']), explode('/', $_SERVER['DOCUMENT_ROOT']));
+    $parts = array_diff (explode ('/', $_SERVER['SCRIPT_FILENAME']), explode ('/', $_SERVER['DOCUMENT_ROOT']));
     $path = $_SERVER['DOCUMENT_ROOT'];
     foreach ($parts as $part) {
         $path .= '/' . $part;
-        if (file_exists($path . '/' . $src)) {
+        if (file_exists ($path . '/' . $src)) {
             return $path;
         }
     }
@@ -738,7 +724,7 @@ function get_document_root ($src) {
     );
 
     foreach ($paths as $path) {
-        if (file_exists($path . $src)) {
+        if (file_exists ($path . $src)) {
             return $path;
         }
     }
@@ -746,7 +732,7 @@ function get_document_root ($src) {
     // special check for microsoft servers
     if (!isset ($_SERVER['DOCUMENT_ROOT'])) {
         $path = str_replace ("/", "\\", $_SERVER['ORIG_PATH_INFO']);
-        $path = str_replace ($path, "", $_SERVER['SCRIPT_FILENAME']);
+        $path = str_replace ($path, '', $_SERVER['SCRIPT_FILENAME']);
 
         if (file_exists ($path . '/' . $src)) {
             return $path;
@@ -766,9 +752,9 @@ function get_document_root ($src) {
 function display_error ($errorString = '') {
 
     header ('HTTP/1.1 400 Bad Request');
-	echo '<pre>' . htmlentities($errorString);
-	echo '<br />Query String : ' . htmlentities($_SERVER['QUERY_STRING']);
+	echo '<pre>' . htmlentities ($errorString);
+	echo '<br />Query String : ' . htmlentities ($_SERVER['QUERY_STRING']);
 	echo '<br />TimThumb version : ' . VERSION . '</pre>';
-    die();
+    die ();
 
 }
