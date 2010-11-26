@@ -66,10 +66,10 @@ $src = clean_source ($src);
 $lastModified = filemtime ($src);
 
 // get standard input properties
-$new_width =  (int) get_request ('w', 0);
-$new_height = (int) get_request ('h', 0);
+$new_width =  (int) abs (get_request ('w', 0));
+$new_height = (int) abs (get_request ('h', 0));
 $zoom_crop = (int) get_request ('zc', 1);
-$quality = (int) get_request ('q', 90);
+$quality = (int) abs (get_request ('q', 90));
 $align = get_request ('a', 'c');
 $filters = get_request ('f', '');
 $sharpen = (bool) get_request ('s', 0);
@@ -81,13 +81,8 @@ if ($new_width == 0 && $new_height == 0) {
 }
 
 // ensure size limits can not be abused
-if ($new_width > MAX_WIDTH) {
-	$new_width = MAX_WIDTH;
-}
-
-if ($new_height > MAX_HEIGHT) {
-	$new_height = MAX_HEIGHT;
-}
+$new_width = min ($new_width, MAX_WIDTH);
+$new_height = min ($new_height, MAX_HEIGHT);
 
 // get mime type of src
 $mime_type = mime_type ($src);
@@ -777,5 +772,3 @@ function display_error ($errorString = '') {
     die();
 
 }
-
-?>
