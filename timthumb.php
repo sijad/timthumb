@@ -15,7 +15,6 @@ define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cach
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('VERSION', '1.18');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
-define ('DIRECTORY_TEMP', './temp');		// temp directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
@@ -596,7 +595,7 @@ function check_external ($src) {
 			$ext = strtolower ($fileDetails['extension']);
 
 			$filename = md5 ($src);
-			$local_filepath = DIRECTORY_TEMP . '/' . $filename . '.' . $ext;
+			$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $ext;
 
 			if (!file_exists ($local_filepath)) {
 
