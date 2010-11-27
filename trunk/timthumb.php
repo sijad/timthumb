@@ -13,7 +13,7 @@
 define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
 define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
-define ('VERSION', '1.18');					// version number (to force a cache refresh)
+define ('VERSION', '1.19');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
@@ -315,7 +315,7 @@ function show_image ($mime_type, $image_resized) {
  */
 function get_request ($property, $default = 0) {
 
-    if (isset($_GET[$property])) {
+    if (isset ($_GET[$property])) {
 
         return $_GET[$property];
 
@@ -340,15 +340,15 @@ function open_image ($mime_type, $src) {
 
 	if (stristr ($mime_type, 'gif')) {
 
-        $image = imagecreatefromgif($src);
+        $image = imagecreatefromgif ($src);
 
     } elseif (stristr ($mime_type, 'jpeg')) {
 
-        $image = imagecreatefromjpeg($src);
+        $image = imagecreatefromjpeg ($src);
 
     } elseif (stristr ($mime_type, 'png')) {
 
-        $image = imagecreatefrompng($src);
+        $image = imagecreatefrompng ($src);
 
     }
 
@@ -374,7 +374,7 @@ function clean_cache () {
 
     $files = glob (DIRECTORY_CACHE . '/*', GLOB_BRACE);
 
-	if (count($files) > CACHE_SIZE) {
+	if (count ($files) > CACHE_SIZE) {
 		
         $yesterday = time () - (24 * 60 * 60);
 
@@ -414,7 +414,7 @@ function clean_cache () {
 function filemtime_compare ($a, $b) {
 
 	$break = explode ('/', $_SERVER['SCRIPT_FILENAME']);
-	$filename = $break[count($break) - 1];
+	$filename = $break[count ($break) - 1];
 	$filepath = str_replace ($filename, '', $_SERVER['SCRIPT_FILENAME']);
 
 	$file_a = realpath ($filepath . $a);
@@ -478,7 +478,7 @@ function show_cache_file ($mime_type) {
 
 	// use browser cache if available to speed up page load
 	if (isset ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-		if (strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime('now')) {
+		if (strtotime ($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime('now')) {
 			header ('HTTP/1.1 304 Not Modified');
 			die ();
 		}
@@ -565,7 +565,7 @@ function check_external ($src) {
 		if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
 			parse_str ($url_info['query']);
 
-			if (isset($v)) {
+			if (isset ($v)) {
 				$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
 				$url_info['host'] = 'img.youtube.com';
 			}
