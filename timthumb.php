@@ -555,7 +555,7 @@ function check_external ($src) {
 
 	global $allowedSites;
 
-    if (preg_match ('/http:\/\//', $src) == true) {
+    if (stristr ($src, 'http://') !== false) {
 
         $url_info = parse_url ($src);
 
@@ -580,8 +580,8 @@ function check_external ($src) {
 
 			$isAllowedSite = false;
 			foreach ($allowedSites as $site) {
-				$site = '/' . addslashes ($site) . '/';
-				if (preg_match ($site, $url_info['host']) == true) {
+				//$site = '/' . addslashes ($site) . '/';
+				if (stristr($url_info['host'], $site) !== false) {
 					$isAllowedSite = true;
 				}
 			}
@@ -604,9 +604,10 @@ function check_external ($src) {
 					$fh = fopen ($local_filepath, 'w');
 					$ch = curl_init ($src);
 
+					curl_setopt ($ch, CURLOPT_TIMEOUT, 15);
+					curl_setopt ($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows; U; Windows NT 5.1; rv:1.7.3) Gecko/20041001 Firefox/0.10.1");
 					curl_setopt ($ch, CURLOPT_URL, $src);
 					curl_setopt ($ch, CURLOPT_RETURNTRANSFER, TRUE);
-					curl_setopt ($ch, CURLOPT_FOLLOWLOCATION, 1);
 					curl_setopt ($ch, CURLOPT_HEADER, 0);
 					curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 					curl_setopt ($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0');
