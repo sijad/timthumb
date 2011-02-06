@@ -18,8 +18,8 @@ define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
-define ('MEMORY_LIMIT', '50M');				// set PHP memory limit
-define ('FILE_SIZE_LIMIT', 1000);			// file size limit to prevent possible DOS attacks
+define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
+define ('MAX_FILE_SIZE', 150000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -688,6 +688,10 @@ function clean_source ($src) {
 
 	if (!is_file ($src)) {
 		display_error ('source is not a valid file');
+	}
+
+	if (filesize ($src) > MAX_FILE_SIZE) {
+		display_error ('source file is too big (filesize)');
 	}
 	
     return realpath ($src);
