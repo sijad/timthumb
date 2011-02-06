@@ -12,8 +12,8 @@
 
 define ('CACHE_SIZE', 1000);				// number of files to store before clearing cache
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
-define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
-define ('VERSION', '1.21');					// version number (to force a cache refresh)
+define ('CACHE_USE', FALSE);				// use the cache files? (mostly for testing)
+define ('VERSION', '1.22');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
@@ -104,6 +104,8 @@ if (file_exists ($src)) {
     // Get original width and height
     $width = imagesx ($image);
     $height = imagesy ($image);
+	$origin_x = 0;
+	$origin_y = 0;
 
     // generate new w/h if not provided
     if ($new_width && !$new_height) {
@@ -126,10 +128,31 @@ if (file_exists ($src)) {
 	// Completely fill the background of the new image with allocated color.
 	imagefill ($canvas, 0, 0, $color);
 
+	// scale down and add borders
+	if ($zoom_crop == 2) {
+
+		$final_height = $height * ($new_width / $width);
+		
+		if ($final_height > $new_height) {
+			
+			$origin_x = $new_width / 2;
+			$new_width = $width * ($new_height / $height);
+			$origin_x = round ($origin_x - ($new_width / 2));
+
+		} else {
+
+			$origin_y = $new_height / 2;
+			$new_height = $final_height;
+			$origin_y = round ($origin_y - ($new_height / 2));
+
+		}
+
+	}
+
 	// Restore transparency blending
 	imagesavealpha ($canvas, true);
 
-	if ($zoom_crop) {
+	if ($zoom_crop > 0) {
 
 		$src_x = $src_y = 0;
 		$src_w = $width;
@@ -141,12 +164,12 @@ if (file_exists ($src)) {
 		// calculate x or y coordinate and width or height of source
 		if ($cmp_x > $cmp_y) {
 
-			$src_w = round (($width / $cmp_x * $cmp_y));
+			$src_w = round ($width / $cmp_x * $cmp_y);
 			$src_x = round (($width - ($width / $cmp_x * $cmp_y)) / 2);
 
 		} else if ($cmp_y > $cmp_x) {
 
-			$src_h = round (($height / $cmp_y * $cmp_x));
+			$src_h = round ($height / $cmp_y * $cmp_x);
 			$src_y = round (($height - ($height / $cmp_y * $cmp_x)) / 2);
 
 		}
@@ -190,7 +213,7 @@ if (file_exists ($src)) {
 				break;
 		}
 
-		imagecopyresampled ($canvas, $image, 0, 0, $src_x, $src_y, $new_width, $new_height, $src_w, $src_h);
+		imagecopyresampled ($canvas, $image, $origin_x, $origin_y, $src_x, $src_y, $new_width, $new_height, $src_w, $src_h);
 
     } else {
 
