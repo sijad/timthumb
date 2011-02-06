@@ -10,14 +10,16 @@
  * http://www.binarymoon.co.uk/projects/timthumb/
  */
 
-define ('CACHE_SIZE', 250);					// number of files to store before clearing cache
-define ('CACHE_CLEAR', 5);					// maximum number of files to delete on each cache clear
+define ('CACHE_SIZE', 1000);				// number of files to store before clearing cache
+define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
-define ('VERSION', '1.19');					// version number (to force a cache refresh)
+define ('VERSION', '1.21');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
+define ('MEMORY_LIMIT', '50M');				// set PHP memory limit
+define ('FILE_SIZE_LIMIT', 1000);			// file size limit to prevent possible DOS attacks
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -89,7 +91,7 @@ $new_width = min ($new_width, MAX_WIDTH);
 $new_height = min ($new_height, MAX_HEIGHT);
 
 // set memory limit to be able to have enough space to resize larger images
-ini_set ('memory_limit', '50M');
+ini_set ('memory_limit', MEMORY_LIMIT);
 
 if (file_exists ($src)) {
 
@@ -153,7 +155,7 @@ if (file_exists ($src)) {
 		switch ($align) {
 			case 't':
 			case 'tl':
-			case 'lr':
+			case 'lt':
 			case 'tr':
 			case 'rt':
 				$src_y = 0;
@@ -296,7 +298,7 @@ function show_image ($mime_type, $image_resized) {
     // check to see if we can write to the cache directory
     $cache_file = get_cache_file ($mime_type);
 
-	if (stristr ($mime_type, 'jpeg')) {
+	if (stripos ($mime_type, 'jpeg') > 1) {
 		imagejpeg ($image_resized, $cache_file, $quality);
 	} else {
 		imagepng ($image_resized, $cache_file, floor ($quality * 0.09));
@@ -338,15 +340,15 @@ function open_image ($mime_type, $src) {
 
 	$mime_type = strtolower ($mime_type);
 
-	if (stristr ($mime_type, 'gif')) {
+	if (stripos ($mime_type, 'gif') !== false) {
 
         $image = imagecreatefromgif ($src);
 
-    } elseif (stristr ($mime_type, 'jpeg')) {
+    } elseif (stripos ($mime_type, 'jpeg') !== false) {
 
         $image = imagecreatefromjpeg ($src);
 
-    } elseif (stristr ($mime_type, 'png')) {
+    } elseif (stripos ($mime_type, 'png') !== false) {
 
         $image = imagecreatefrompng ($src);
 
@@ -366,7 +368,7 @@ function clean_cache () {
 
 	// add an escape
 	// Reduces the amount of cache clearing to save some processor speed
-	if (rand (1, 100) > 10) {
+	if (rand (1, 50) > 10) {
 		return true;
 	}
 
@@ -531,7 +533,7 @@ function get_cache_file ($mime_type) {
 
 	$file_type = '.png';
 
-	if (stristr ($mime_type, 'jpeg')) {
+	if (stripos ($mime_type, 'jpeg') > 1) {
 		$file_type = '.jpg';
     }
 
@@ -555,7 +557,7 @@ function check_external ($src) {
 
 	global $allowedSites;
 
-    if (stristr ($src, 'http://') !== false) {
+    if (stripos ($src, 'http://') !== false || stripos ($src, 'https://') !== false) {
 
         $url_info = parse_url ($src);
 
@@ -581,7 +583,7 @@ function check_external ($src) {
 			$isAllowedSite = false;
 			foreach ($allowedSites as $site) {
 				//$site = '/' . addslashes ($site) . '/';
-				if (stristr($url_info['host'], $site) !== false) {
+				if (stripos ($url_info['host'], $site) !== false) {
 					$isAllowedSite = true;
 				}
 			}
@@ -594,7 +596,7 @@ function check_external ($src) {
 			$fileDetails = pathinfo ($src);
 			$ext = strtolower ($fileDetails['extension']);
 
-			$filename = md5 ($src);
+			$filename = 'external_' . md5 ($src);
 			$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $ext;
 
 			if (!file_exists ($local_filepath)) {
@@ -605,19 +607,19 @@ function check_external ($src) {
 					$ch = curl_init ($src);
 
 					curl_setopt ($ch, CURLOPT_TIMEOUT, 15);
-					curl_setopt ($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows; U; Windows NT 5.1; rv:1.7.3) Gecko/20041001 Firefox/0.10.1");
+					curl_setopt ($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0');
 					curl_setopt ($ch, CURLOPT_URL, $src);
 					curl_setopt ($ch, CURLOPT_RETURNTRANSFER, TRUE);
+					//curl_setopt ($ch, CURLOPT_FOLLOWLOCATION, 1);
 					curl_setopt ($ch, CURLOPT_HEADER, 0);
 					curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-					curl_setopt ($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0');
 					curl_setopt ($ch, CURLOPT_FILE, $fh);
 
 					if (curl_exec ($ch) === FALSE) {
 						if (file_exists ($local_filepath)) {
 							unlink ($local_filepath);
 						}
-						display_error ('error reading file ' . $src . ' from remote host: ' . curl_error($ch));
+						display_error ('error reading file ' . $src . ' from remote host: ' . curl_error ($ch));
 					}
 
 					curl_close ($ch);
@@ -625,7 +627,7 @@ function check_external ($src) {
 
                 } else {
 
-					if (!$img = file_get_contents($src)) {
+					if (!$img = file_get_contents ($src)) {
 						display_error ('remote file for ' . $src . ' can not be accessed. It is likely that the file permissions are restricted');
 					}
 
@@ -665,7 +667,7 @@ function check_external ($src) {
 function clean_source ($src) {
 
 	$host = str_replace ('www.', '', $_SERVER['HTTP_HOST']);
-	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "/i";
+	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "\//i";
 
 	$src = preg_replace ($regex, '', $src);
 	$src = strip_tags ($src);
@@ -684,7 +686,11 @@ function clean_source ($src) {
     // get path to image on file system
     $src = get_document_root ($src) . '/' . $src;
 
-    return $src;
+	if (!is_file ($src)) {
+		display_error ('source is not a valid file');
+	}
+	
+    return realpath ($src);
 
 }
 
@@ -739,7 +745,7 @@ function get_document_root ($src) {
         }
     }
 
-    display_error ('file not found ' . $src, ENT_QUOTES);
+    display_error ('file not found');
 
 }
 
