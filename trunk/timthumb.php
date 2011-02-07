@@ -12,14 +12,14 @@
 
 define ('CACHE_SIZE', 1000);				// number of files to store before clearing cache
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
-define ('CACHE_USE', TRUE);				// use the cache files? (mostly for testing)
+define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('VERSION', '1.22');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1000);					// maximum image width
 define ('MAX_HEIGHT', 1000);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
 define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
-define ('MAX_FILE_SIZE', 150000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
+define ('MAX_FILE_SIZE', 1500000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
