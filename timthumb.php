@@ -690,7 +690,7 @@ function check_external ($src) {
 function clean_source ($src) {
 
 	$host = str_replace ('www.', '', $_SERVER['HTTP_HOST']);
-	$regex = "/^((ht|f)tp(s|):\/\/)(www\.|)" . $host . "\//i";
+	$regex = "/^(http(s|):\/\/)(www\.|)" . $host . "\//i";
 
 	$src = preg_replace ($regex, '', $src);
 	$src = strip_tags ($src);
