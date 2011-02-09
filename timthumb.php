@@ -15,8 +15,8 @@ define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cac
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('VERSION', '1.23');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
-define ('MAX_WIDTH', 1000);					// maximum image width
-define ('MAX_HEIGHT', 1000);				// maximum image height
+define ('MAX_WIDTH', 1500);					// maximum image width
+define ('MAX_HEIGHT', 1500);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
 define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
 define ('MAX_FILE_SIZE', 2000000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
@@ -341,13 +341,9 @@ function show_image ($mime_type, $image_resized) {
 function get_request ($property, $default = 0) {
 
     if (isset ($_GET[$property])) {
-
         return $_GET[$property];
-
     } else {
-
         return $default;
-
     }
 
 }
@@ -591,53 +587,53 @@ function check_external ($src) {
 
 	global $allowedSites;
 
-    if (stripos ($src, 'http://') !== false || stripos ($src, 'https://') !== false) {
+	$filename = 'external_' . md5 ($src);
+	$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $ext;
 
-		if (!validate_url ($src)) {
-			display_error ('invalid url');
-		}
+	// only do this stuff the file doesn't already exist
+	if (!file_exists ($local_filepath)) {
 
-        $url_info = parse_url ($src);
+		if (stripos ($src, 'http://') !== false || stripos ($src, 'https://') !== false) {
 
-		// convert youtube video urls
-		// need to tidy up the code
-		
-		if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
-			parse_str ($url_info['query']);
-
-			if (isset ($v)) {
-				$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
-				$url_info['host'] = 'img.youtube.com';
+			if (!validate_url ($src)) {
+				display_error ('invalid url');
 			}
-		}
 
-		// check allowed sites (if required)
-		if (ALLOW_EXTERNAL) {
+			$url_info = parse_url ($src);
 
-			$isAllowedSite = true;
+			// convert youtube video urls
+			// need to tidy up the code
 
-		} else {
+			if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
+				parse_str ($url_info['query']);
 
-			$isAllowedSite = false;
-			foreach ($allowedSites as $site) {
-				//$site = '/' . addslashes ($site) . '/';
-				if (stripos ($url_info['host'], $site) !== false) {
-					$isAllowedSite = true;
+				if (isset ($v)) {
+					$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
+					$url_info['host'] = 'img.youtube.com';
 				}
 			}
-			
-		}
 
-		// if allowed
-		if ($isAllowedSite) {
+			// check allowed sites (if required)
+			if (ALLOW_EXTERNAL) {
 
-			$fileDetails = pathinfo ($src);
-			$ext = strtolower ($fileDetails['extension']);
+				$isAllowedSite = true;
 
-			$filename = 'external_' . md5 ($src);
-			$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $ext;
+			} else {
 
-			if (!file_exists ($local_filepath)) {
+				$isAllowedSite = false;
+				foreach ($allowedSites as $site) {
+					if (stripos ($url_info['host'], $site) !== false) {
+						$isAllowedSite = true;
+					}
+				}
+
+			}
+
+			// if allowed
+			if ($isAllowedSite) {
+
+				$fileDetails = pathinfo ($src);
+				$ext = strtolower ($fileDetails['extension']);
 
 				if (function_exists ('curl_init')) {
 
@@ -678,17 +674,21 @@ function check_external ($src) {
 					display_error ('local file for ' . $src . ' can not be created');
 				}
 
+				$src = $local_filepath;
+
+			} else {
+
+				display_error ('remote host "' . $url_info['host'] . '" not allowed');
+
 			}
-
-			$src = $local_filepath;
-
-		} else {
-
-			display_error ('remote host "' . $url_info['host'] . '" not allowed');
 
 		}
 
-    }
+    } else {
+
+		$src = $local_filepath;
+
+	}
 
     return $src;
 
