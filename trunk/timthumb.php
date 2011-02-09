@@ -572,6 +572,17 @@ function get_cache_file ($mime_type) {
 
 /**
  *
+ * @param <type> $url
+ * @return <type> 
+ */
+function validate_url ($url) {
+	$pattern = '/^(([\w]+:)?\/\/)?(([\d\w]|%[a-fA-f\d]{2,2})+(:([\d\w]|%[a-fA-f\d]{2,2})+)?@)?([\d\w][-\d\w]{0,253}[\d\w]\.)+[\w]{2,4}(:[\d]+)?(\/([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)*(\?(&amp;?([-+_~.\d\w]|%[a-fA-f\d]{2,2})=?)*)?(#([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)?$/';
+	return preg_match($pattern, $url);
+}
+
+
+/**
+ *
  * @global array $allowedSites
  * @param string $src
  * @return string
@@ -581,6 +592,10 @@ function check_external ($src) {
 	global $allowedSites;
 
     if (stripos ($src, 'http://') !== false || stripos ($src, 'https://') !== false) {
+
+		if (!validate_url ($src)) {
+			display_error ('invalid url');
+		}
 
         $url_info = parse_url ($src);
 
@@ -740,24 +755,6 @@ function get_document_root ($src) {
     foreach ($parts as $part) {
         $path .= '/' . $part;
         if (file_exists ($path . '/' . $src)) {
-            return $path;
-        }
-    }
-
-    // the relative paths below are useful if timthumb is moved outside of document root
-    // specifically if installed in wordpress themes like mimbo pro:
-    // /wp-content/themes/mimbopro/scripts/timthumb.php
-    $paths = array (
-        "./",
-        "../",
-        "../../",
-        "../../../",
-        "../../../../",
-        "../../../../../"
-    );
-
-    foreach ($paths as $path) {
-        if (file_exists ($path . $src)) {
             return $path;
         }
     }
