@@ -366,17 +366,11 @@ function open_image ($mime_type, $src) {
 	$mime_type = strtolower ($mime_type);
 
 	if (stripos ($mime_type, 'gif') !== false) {
-
         $image = imagecreatefromgif ($src);
-
     } elseif (stripos ($mime_type, 'jpeg') !== false) {
-
         $image = imagecreatefromjpeg ($src);
-
     } elseif (stripos ($mime_type, 'png') !== false) {
-
         $image = imagecreatefrompng ($src);
-
     }
 
     return $image;
@@ -584,7 +578,7 @@ function get_cache_file ($mime_type) {
  */
 function validate_url ($url) {
 	$pattern = '/^(([\w]+:)?\/\/)?(([\d\w]|%[a-fA-f\d]{2,2})+(:([\d\w]|%[a-fA-f\d]{2,2})+)?@)?([\d\w][-\d\w]{0,253}[\d\w]\.)+[\w]{2,4}(:[\d]+)?(\/([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)*(\?(&amp;?([-+_~.\d\w]|%[a-fA-f\d]{2,2})=?)*)?(#([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)?$/';
-	return preg_match($pattern, $url);
+	return preg_match ($pattern, $url);
 }
 
 
@@ -720,7 +714,6 @@ function curl_write ($handle, $data) {
 	global $external_data_string, $fh;
 
 	fwrite ($fh, $data);
-
 	$external_data_string .= $data;
 
 	if (strlen ($external_data_string) > MAX_FILE_SIZE) {
