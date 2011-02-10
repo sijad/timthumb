@@ -13,13 +13,13 @@
 define ('CACHE_SIZE', 1000);				// number of files to store before clearing cache
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
-define ('VERSION', '1.23');					// version number (to force a cache refresh)
+define ('VERSION', '1.24');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
-define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution)
+define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution - not advised!)
 define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
-define ('MAX_FILE_SIZE', 2000000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
+define ('MAX_FILE_SIZE', 1500000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -44,6 +44,12 @@ $src = clean_source ($src);
 
 // get mime type of src
 $mime_type = mime_type ($src);
+
+// used for external websites only
+$external_data_string = '';
+
+// generic file handle for reading and writing to files
+$fh = '';
 
 // check to see if this image is in the cache already
 // if already cached then display the image and die
@@ -457,6 +463,11 @@ function mime_type ($file) {
 	$file_infos = getimagesize ($file);
 	$mime_type = $file_infos['mime'];
 
+	// no mime type
+	if (empty ($mime_type)) {
+		display_error ('no mime type specified');
+	}
+
     // use mime_type to determine mime type
     if (!preg_match ("/jpg|jpeg|gif|png/i", $mime_type)) {
 		display_error ('Invalid src mime type: ' . $mime_type);
@@ -587,8 +598,10 @@ function check_external ($src) {
 
 	global $allowedSites;
 
+	// work out file details
+	$fileDetails = pathinfo ($src);
 	$filename = 'external_' . md5 ($src);
-	$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $ext;
+	$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . strtolower ($fileDetails['extension']);
 
 	// only do this stuff the file doesn't already exist
 	if (!file_exists ($local_filepath)) {
@@ -632,26 +645,24 @@ function check_external ($src) {
 			// if allowed
 			if ($isAllowedSite) {
 
-				$fileDetails = pathinfo ($src);
-				$ext = strtolower ($fileDetails['extension']);
-
 				if (function_exists ('curl_init')) {
+
+					global $fh;
 
 					$fh = fopen ($local_filepath, 'w');
 					$ch = curl_init ($src);
 
-					curl_setopt ($ch, CURLOPT_TIMEOUT, 10);
+					curl_setopt ($ch, CURLOPT_TIMEOUT, 5);
 					curl_setopt ($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Firefox/1.0');
 					curl_setopt ($ch, CURLOPT_URL, $src);
 					curl_setopt ($ch, CURLOPT_RETURNTRANSFER, TRUE);
 					curl_setopt ($ch, CURLOPT_HEADER, 0);
 					curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 					curl_setopt ($ch, CURLOPT_FILE, $fh);
+					curl_setopt ($ch, CURLOPT_WRITEFUNCTION, 'curl_write');
 
+					// error so die
 					if (curl_exec ($ch) === FALSE) {
-						if (file_exists ($local_filepath)) {
-							unlink ($local_filepath);
-						}
 						display_error ('error reading file ' . $src . ' from remote host: ' . curl_error ($ch));
 					}
 
@@ -696,6 +707,32 @@ function check_external ($src) {
 
 
 /**
+ * callback for curl command to receive external images
+ * limit the amount of data downloaded from external servers
+ * 
+ * @global <type> $data_string
+ * @param <type> $handle
+ * @param <type> $data
+ * @return <type>
+ */
+function curl_write ($handle, $data) {
+
+	global $external_data_string, $fh;
+
+	fwrite ($fh, $data);
+
+	$external_data_string .= $data;
+
+	if (strlen ($external_data_string) > MAX_FILE_SIZE) {
+		return 0;
+	} else {
+		return strlen ($data);
+	}
+
+}
+
+
+/**
  * tidy up the image source url
  *
  * @param <type> $src
@@ -728,7 +765,7 @@ function clean_source ($src) {
 	}
 
 	if (filesize ($src) > MAX_FILE_SIZE) {
-		display_error ('source file is too big (filesize)');
+		display_error ('source file is too big (filesize > MAX_FILE_SIZE)');
 	}
 	
     return realpath ($src);
