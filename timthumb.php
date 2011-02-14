@@ -739,7 +739,6 @@ function clean_source ($src) {
 
 	$src = preg_replace ($regex, '', $src);
 	$src = strip_tags ($src);
-	$src = str_replace (' ', '%20', $src);
     $src = check_external ($src);
 
     // remove slash from start of string
