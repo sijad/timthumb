@@ -781,9 +781,7 @@ function get_document_root ($src) {
     // check from script filename (to get all directories to timthumb location)
     $parts = array_diff (explode ('/', $_SERVER['SCRIPT_FILENAME']), explode ('/', $_SERVER['DOCUMENT_ROOT']));
 
-	if (!substr ($_SERVER['SCRIPT_FILENAME'], 0, 1) == '/') {
-		$path = $_SERVER['DOCUMENT_ROOT'];
-	}
+	$path = $_SERVER['DOCUMENT_ROOT'];
 	
     foreach ($parts as $part) {
         $path .= '/' . $part;
