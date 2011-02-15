@@ -13,14 +13,14 @@
 define ('CACHE_SIZE', 1000);				// number of files to store before clearing cache
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
-define ('VERSION', '1.24');					// version number (to force a cache refresh)
+define ('VERSION', '1.25');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution - not advised!)
 define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
 define ('MAX_FILE_SIZE', 1500000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
-define ('CURL_TIMEOUT', 8);					// timeout duration. Tweak as you require (lower = better)
+define ('CURL_TIMEOUT', 10);					// timeout duration. Tweak as you require (lower = better)
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -29,6 +29,7 @@ $allowedSites = array (
 	'blogger.com',
 	'wordpress.com',
 	'img.youtube.com',
+	'upload.wikimedia.org',
 );
 
 // STOP MODIFYING HERE!
@@ -116,13 +117,9 @@ if (file_exists ($src)) {
 
     // generate new w/h if not provided
     if ($new_width && !$new_height) {
-
         $new_height = floor ($height * ($new_width / $width));
-
     } else if ($new_height && !$new_width) {
-
         $new_width = floor ($width * ($new_height / $height));
-
     }
 
 	// create a new true color image
@@ -325,7 +322,6 @@ function show_image ($mime_type, $image_resized) {
 
     global $quality;
 
-    // check to see if we can write to the cache directory
     $cache_file = get_cache_file ($mime_type);
 
 	if (stripos ($mime_type, 'jpeg') > 1) {
@@ -658,6 +654,8 @@ function check_external ($src) {
 
 					// error so die
 					if (curl_exec ($ch) === FALSE) {
+						unlink ($local_filepath);
+						touch ($local_filepath);
 						display_error ('error reading file ' . $src . ' from remote host: ' . curl_error ($ch));
 					}
 
@@ -759,6 +757,10 @@ function clean_source ($src) {
 
 	if (filesize ($src) > MAX_FILE_SIZE) {
 		display_error ('source file is too big (filesize > MAX_FILE_SIZE)');
+	}
+
+	if (filesize ($src) <= 0) {
+		display_error ('source file <= 0 bytes. Possible external file download error (file is too large)');
 	}
 	
     return realpath ($src);
