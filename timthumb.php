@@ -122,6 +122,19 @@ if (file_exists ($src)) {
         $new_width = floor ($width * ($new_height / $height));
     }
 
+	// scale down and add borders
+	if ($zoom_crop == 3) {
+
+		$final_height = $height * ($new_width / $width);
+
+		if ($final_height > $new_height) {
+			$new_width = $width * ($new_height / $height);
+		} else {
+			$new_height = $final_height;
+		}
+
+	}
+
 	// create a new true color image
 	$canvas = imagecreatetruecolor ($new_width, $new_height);
 	imagealphablending ($canvas, false);
