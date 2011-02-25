@@ -337,7 +337,7 @@ function show_image ($mime_type, $image_resized) {
 
     $cache_file = get_cache_file ($mime_type);
 
-	if (stripos ($mime_type, 'jpeg') > 1) {
+	if (strpos ($mime_type, 'jpeg') > 1) {
 		imagejpeg ($image_resized, $cache_file, $quality);
 	} else {
 		imagepng ($image_resized, $cache_file, floor ($quality * 0.09));
@@ -373,14 +373,12 @@ function get_request ($property, $default = 0) {
  */
 function open_image ($mime_type, $src) {
 
-	$mime_type = strtolower ($mime_type);
-
-	if (stripos ($mime_type, 'gif') !== false) {
-        $image = imagecreatefromgif ($src);
-    } elseif (stripos ($mime_type, 'jpeg') !== false) {
+	if (strpos ($mime_type, 'jpeg') !== false) {
         $image = imagecreatefromjpeg ($src);
-    } elseif (stripos ($mime_type, 'png') !== false) {
+    } elseif (strpos ($mime_type, 'png') !== false) {
         $image = imagecreatefrompng ($src);
+	} elseif (strpos ($mime_type, 'gif') !== false) {
+        $image = imagecreatefromgif ($src);
     }
 
     return $image;
@@ -477,7 +475,7 @@ function mime_type ($file) {
 		display_error ('Invalid src mime type: ' . $mime_type);
     }
 
-    return $mime_type;
+    return strtolower ($mime_type);
 
 }
 
@@ -567,7 +565,7 @@ function get_cache_file ($mime_type) {
 
 	$file_type = '.png';
 
-	if (stripos ($mime_type, 'jpeg') > 1) {
+	if (strpos ($mime_type, 'jpeg') > 1) {
 		$file_type = '.jpg';
     }
 
@@ -610,7 +608,7 @@ function check_external ($src) {
 	// only do this stuff the file doesn't already exist
 	if (!file_exists ($local_filepath)) {
 
-		if (stripos ($src, 'http://') !== false || stripos ($src, 'https://') !== false) {
+		if (strpos (strtolower ($src), 'http://') !== false || strpos (strtolower ($src), 'https://') !== false) {
 
 			if (!validate_url ($src)) {
 				display_error ('invalid url');
@@ -639,7 +637,7 @@ function check_external ($src) {
 
 				$isAllowedSite = false;
 				foreach ($allowedSites as $site) {
-					if (stripos ($url_info['host'], $site) !== false) {
+					if (strpos (strtolower ($url_info['host']), $site) !== false) {
 						$isAllowedSite = true;
 					}
 				}
