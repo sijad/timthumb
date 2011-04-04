@@ -13,14 +13,15 @@
 define ('CACHE_SIZE', 1000);				// number of files to store before clearing cache
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
-define ('VERSION', '1.25');					// version number (to force a cache refresh)
+define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
+define ('VERSION', '1.26');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
 define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution - not advised!)
 define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
 define ('MAX_FILE_SIZE', 1500000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
-define ('CURL_TIMEOUT', 10);					// timeout duration. Tweak as you require (lower = better)
+define ('CURL_TIMEOUT', 10);				// timeout duration. Tweak as you require (lower = better)
 
 // external domains that are allowed to be displayed on your website
 $allowedSites = array (
@@ -531,7 +532,7 @@ function show_cache_file ($mime_type) {
 		header ('Accept-Ranges: bytes');
 		header ('Last-Modified: ' . $gmdate_modified);
 		header ('Content-Length: ' . filesize ($cache_file));
-		header ('Cache-Control: max-age=864000, must-revalidate');
+		header ('Cache-Control: max-age=' . CACHE_MAX_AGE . ', must-revalidate');
 		header ('Expires: ' . $gmdate_expires);
 
 		if (!@readfile ($cache_file)) {
@@ -585,7 +586,7 @@ function get_cache_file ($mime_type) {
  * @return <type> 
  */
 function validate_url ($url) {
-	$pattern = '/^(([\w]+:)?\/\/)?(([\d\w]|%[a-fA-f\d]{2,2})+(:([\d\w]|%[a-fA-f\d]{2,2})+)?@)?([\d\w][-\d\w]{0,253}[\d\w]\.)+[\w]{2,4}(:[\d]+)?(\/([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)*(\?(&amp;?([-+_~.\d\w]|%[a-fA-f\d]{2,2})=?)*)?(#([-+_~.\d\w]|%[a-fA-f\d]{2,2})*)?$/';
+	$pattern = "/\b(?:(?:https?):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i";
 	return preg_match ($pattern, $url);
 }
 
