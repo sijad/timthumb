@@ -512,8 +512,8 @@ function check_cache ($mime_type) {
 function show_cache_file ($mime_type) {
 
 	// use browser cache if available to speed up page load
-	if (isset ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-		if (strtotime ($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime('now')) {
+	if (!empty ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+		if (strtotime ($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime ('now')) {
 			header ('HTTP/1.1 304 Not Modified');
 			die ();
 		}
