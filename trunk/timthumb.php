@@ -14,7 +14,7 @@ define ('CACHE_SIZE', 1000);				// number of files to store before clearing cach
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
-define ('VERSION', '1.27');					// version number (to force a cache refresh)
+define ('VERSION', '1.28');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
@@ -791,14 +791,14 @@ function get_document_root ($src) {
     // check from script filename (to get all directories to timthumb location)
     $parts = array_diff (explode ('/', $_SERVER['SCRIPT_FILENAME']), explode ('/', $_SERVER['DOCUMENT_ROOT']));
 
-	$path = $_SERVER['DOCUMENT_ROOT'];
+	$path = './';
 	
-    foreach ($parts as $part) {
-        $path .= '/' . $part;
-        if (file_exists ($path . '/' . $src)) {
-            return $path;
-        }
-    }
+	foreach ($parts as $part) {
+		if (file_exists ($path . '/' . $src)) {
+			return realpath ($path);
+		}
+		$path .= '../';
+	}
 
     // special check for microsoft servers
     if (!isset ($_SERVER['DOCUMENT_ROOT'])) {
@@ -806,7 +806,7 @@ function get_document_root ($src) {
         $path = str_replace ($path, '', $_SERVER['SCRIPT_FILENAME']);
 
         if (file_exists ($path . '/' . $src)) {
-            return $path;
+            return realpath ($path);
         }
     }
 
