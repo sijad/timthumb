@@ -14,7 +14,7 @@ define ('CACHE_SIZE', 1000);				// number of files to store before clearing cach
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
-define ('VERSION', '1.26');					// version number (to force a cache refresh)
+define ('VERSION', '1.27');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
@@ -193,42 +193,19 @@ if (file_exists ($src)) {
 		}
 
 		// positional cropping!
-		switch ($align) {
-			case 't':
-			case 'tl':
-			case 'lt':
-			case 'tr':
-			case 'rt':
+		if ($align) {
+			if (strpos ($align, 't') !== false) {
 				$src_y = 0;
-				break;
-
-			case 'b':
-			case 'bl':
-			case 'lb':
-			case 'br':
-			case 'rb':
+			}
+			if (strpos ($align, 'b') !== false) {
 				$src_y = $height - $src_h;
-				break;
-
-			case 'l':
-			case 'tl':
-			case 'lt':
-			case 'bl':
-			case 'lb':
+			}
+			if (strpos ($align, 'l') !== false) {
 				$src_x = 0;
-				break;
-
-			case 'r':
-			case 'tr':
-			case 'rt':
-			case 'br':
-			case 'rb':
-				$src_x = $width - $new_width;
+			}
+			if (strpos ($align, 'r') !== false) {
 				$src_x = $width - $src_w;
-				break;
-
-			default:
-				break;
+			}
 		}
 
 		imagecopyresampled ($canvas, $image, $origin_x, $origin_y, $src_x, $src_y, $new_width, $new_height, $src_w, $src_h);
@@ -338,10 +315,16 @@ function show_image ($mime_type, $image_resized) {
 
     $cache_file = get_cache_file ($mime_type);
 
-	if (strpos ($mime_type, 'jpeg') > 1) {
-		imagejpeg ($image_resized, $cache_file, $quality);
-	} else {
-		imagepng ($image_resized, $cache_file, floor ($quality * 0.09));
+	switch ($mime_type) {
+		case 'jpg':
+			imagejpeg ($image_resized, $cache_file, $quality);
+			break;
+
+		default:
+		case 'png':
+			imagepng ($image_resized, $cache_file, floor ($quality * 0.09));
+			break;
+
 	}
 
 	show_cache_file ($mime_type);
@@ -374,13 +357,19 @@ function get_request ($property, $default = 0) {
  */
 function open_image ($mime_type, $src) {
 
-	if (strpos ($mime_type, 'jpeg') !== false) {
-        $image = imagecreatefromjpeg ($src);
-    } elseif (strpos ($mime_type, 'png') !== false) {
-        $image = imagecreatefrompng ($src);
-	} elseif (strpos ($mime_type, 'gif') !== false) {
-        $image = imagecreatefromgif ($src);
-    }
+	switch ($mime_type) {
+		case 'jpg':
+			$image = imagecreatefromjpeg ($src);
+			break;
+
+		case 'png':
+			$image = imagecreatefrompng ($src);
+			break;
+
+		case 'gif':
+			$image = imagecreatefromgif ($src);
+			break;
+	}
 
     return $image;
 
@@ -476,7 +465,14 @@ function mime_type ($file) {
 		display_error ('Invalid src mime type: ' . $mime_type);
     }
 
-    return strtolower ($mime_type);
+	$mime_type = strtolower ($mime_type);
+	$mime_type = str_replace ('image/', '', $mime_type);
+
+	if ($mime_type == 'jpeg') {
+		$mime_type = 'jpg';
+	}
+
+    return $mime_type;
 
 }
 
@@ -566,7 +562,7 @@ function get_cache_file ($mime_type) {
 
 	$file_type = '.png';
 
-	if (strpos ($mime_type, 'jpeg') > 1) {
+	if ($mime_type == 'jpg') {
 		$file_type = '.jpg';
     }
 
