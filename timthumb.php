@@ -613,6 +613,10 @@ function check_external ($src) {
 
 			$url_info = parse_url ($src);
 
+			if (count (explode ('.', $url_info['path'])) > 2) {
+				display_error ('source filename invalid');
+			}			
+
 			// convert youtube video urls
 			// need to tidy up the code
 
@@ -755,7 +759,7 @@ function clean_source ($src) {
     // don't allow users the ability to use '../'
     // in order to gain access to files below document root
     $src = preg_replace ("/\.\.+\//", "", $src);
-
+	
     // get path to image on file system
     $src = get_document_root ($src) . '/' . $src;
 
@@ -770,7 +774,7 @@ function clean_source ($src) {
 	if (filesize ($src) <= 0) {
 		display_error ('source file <= 0 bytes. Possible external file download error (file is too large)');
 	}
-	
+
     return realpath ($src);
 
 }
