@@ -14,7 +14,7 @@ define ('CACHE_SIZE', 1000);				// number of files to store before clearing cach
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
-define ('VERSION', '1.28');					// version number (to force a cache refresh)
+define ('VERSION', '1.29');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
@@ -42,11 +42,11 @@ if ($src == '' || strlen ($src) <= 3) {
     display_error ('no image specified');
 }
 
-// clean params before use
-$src = clean_source ($src);
-
 // get mime type of src
 $mime_type = mime_type ($src);
+
+// clean params before use
+$src = clean_source ($src);
 
 // used for external websites only
 $external_data_string = '';
@@ -453,14 +453,15 @@ function filemtime_compare ($a, $b) {
 function mime_type ($file) {
 
 	$file_infos = getimagesize ($file);
-	$mime_type = $file_infos['mime'];
-
+	
 	// no mime type
-	if (empty ($mime_type)) {
-		display_error ('no mime type specified');
+	if (empty ($file_infos['mime'])) {
+		display_error ('no mime type specified in image');
 	}
 
-    // use mime_type to determine mime type
+	$mime_type = $file_infos['mime'];
+
+	// use mime_type to determine mime type
     if (!preg_match ("/jpg|jpeg|gif|png/i", $mime_type)) {
 		display_error ('Invalid src mime type: ' . $mime_type);
     }
@@ -518,13 +519,19 @@ function show_cache_file ($mime_type) {
 	$cache_file = get_cache_file ($mime_type);
 
 	if (file_exists ($cache_file)) {
+		
+		$type = array (
+			'png' => 'png',
+			'gif' => 'png',
+			'jpg' => 'jpeg',
+		);
 
 		// change the modified headers
 		$gmdate_expires = gmdate ('D, d M Y H:i:s', strtotime ('now +10 days')) . ' GMT';
 		$gmdate_modified = gmdate ('D, d M Y H:i:s') . ' GMT';
 
 		// send content headers then display image
-		header ('Content-Type: ' . $mime_type);
+		header ('Content-Type: image/' . $type[$mime_type]);
 		header ('Accept-Ranges: bytes');
 		header ('Last-Modified: ' . $gmdate_modified);
 		header ('Content-Length: ' . filesize ($cache_file));
@@ -560,15 +567,9 @@ function get_cache_file ($mime_type) {
     static $cache_file;
 	global $src;
 
-	$file_type = '.png';
-
-	if ($mime_type == 'jpg') {
-		$file_type = '.jpg';
-    }
-
     if (!$cache_file) {
 		// filemtime is used to make sure updated files get recached
-        $cache_file = DIRECTORY_CACHE . '/' . md5 ($_SERVER ['QUERY_STRING'] . VERSION . filemtime ($src)) . $file_type;
+        $cache_file = DIRECTORY_CACHE . '/' . md5 ($_SERVER ['QUERY_STRING'] . VERSION . filemtime ($src)) . '.' . $mime_type;
     }
 
     return $cache_file;
@@ -595,12 +596,12 @@ function validate_url ($url) {
  */
 function check_external ($src) {
 
-	global $allowedSites;
+	global $allowedSites, $mime_type;
 
 	// work out file details
 	$fileDetails = pathinfo ($src);
 	$filename = 'external_' . md5 ($src);
-	$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . strtolower ($fileDetails['extension']);
+	$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $mime_type;
 
 	// only do this stuff the file doesn't already exist
 	if (!file_exists ($local_filepath)) {
