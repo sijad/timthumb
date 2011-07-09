@@ -31,6 +31,7 @@ $allowedSites = array (
 	'wordpress.com',
 	'img.youtube.com',
 	'upload.wikimedia.org',
+	'photobucket.com',
 );
 
 // STOP MODIFYING HERE!
@@ -564,7 +565,8 @@ function get_file_type ($extension) {
 			return 'png';
 			
 		case 'jpg':
-			return 'jpg';
+		case 'jpeg':
+			return 'jpeg';
 			
 		default:
 			display_error ('file type not found : ' . $extension);
@@ -619,7 +621,7 @@ function check_external ($src) {
 	$file_details = pathinfo ($src);
 	$filename = 'external_' . md5 ($src);
 	$local_filepath = DIRECTORY_CACHE . '/' . $filename . '.' . $file_details['extension'];
-
+	
 	// only do this stuff the file doesn't already exist
 	if (!file_exists ($local_filepath)) {
 
