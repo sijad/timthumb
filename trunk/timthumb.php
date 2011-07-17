@@ -14,7 +14,7 @@ define ('CACHE_SIZE', 1000);				// number of files to store before clearing cach
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
-define ('VERSION', '1.30');					// version number (to force a cache refresh)
+define ('VERSION', '1.31');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
@@ -90,6 +90,7 @@ $quality = (int) abs (get_request ('q', 90));
 $align = get_request ('a', 'c');
 $filters = get_request ('f', '');
 $sharpen = (bool) get_request ('s', 0);
+$canvas_color = get_request ('cc', 'ffffff');
 
 // set default width and height if neither are set already
 if ($new_width == 0 && $new_height == 0) {
@@ -142,8 +143,16 @@ if (file_exists ($src)) {
 	$canvas = imagecreatetruecolor ($new_width, $new_height);
 	imagealphablending ($canvas, false);
 
+	if (strlen ($canvas_color) < 6) {
+		$canvas_color = 'ffffff';
+	}
+
+	$canvas_color_R = hexdec (substr ($canvas_color, 0, 2));
+	$canvas_color_G = hexdec (substr ($canvas_color, 2, 2));
+	$canvas_color_B = hexdec (substr ($canvas_color, 2, 2));
+
 	// Create a new transparent color for image
-	$color = imagecolorallocatealpha ($canvas, 0, 0, 0, 127);
+	$color = imagecolorallocatealpha ($canvas, $canvas_color_R, $canvas_color_G, $canvas_color_B, 127);
 
 	// Completely fill the background of the new image with allocated color.
 	imagefill ($canvas, 0, 0, $color);
