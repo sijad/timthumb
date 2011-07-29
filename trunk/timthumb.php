@@ -14,7 +14,7 @@ define ('CACHE_SIZE', 1000);				// number of files to store before clearing cach
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
-define ('VERSION', '1.31');					// version number (to force a cache refresh)
+define ('VERSION', '1.32');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
@@ -42,7 +42,6 @@ $src = get_request ('src', '');
 if ($src == '' || strlen ($src) <= 3) {
     display_error ('no image specified');
 }
-
 
 // clean params before use
 $src = clean_source ($src);
@@ -702,6 +701,16 @@ function check_external ($src) {
 
 					curl_close ($ch);
 					fclose ($fh);
+					
+					// check it's actually an image
+					$file_infos = getimagesize ($local_filepath);
+
+					// no mime type or invalid mime type
+					if (empty ($file_infos['mime']) || !preg_match ("/jpg|jpeg|gif|png/i", $mime_type)) {
+						unlink ($local_filepath);
+						touch ($local_filepath);
+						display_error ('remote file not a valid image');
+					}					
 
                 } else {
 
