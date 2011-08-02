@@ -665,7 +665,7 @@ function check_external ($src) {
 
 				$isAllowedSite = false;
 				foreach ($allowedSites as $site) {
-					if (strpos (strtolower ($url_info['host']), $site) !== false) {
+					if (strpos (strtolower ($url_info['host'] . '/'), $site) !== false) {
 						$isAllowedSite = true;
 					}
 				}
