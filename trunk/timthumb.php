@@ -27,11 +27,8 @@ define ('CURL_TIMEOUT', 10);				// timeout duration. Tweak as you require (lower
 $allowedSites = array (
 	'flickr.com',
 	'picasa.com',
-	'blogger.com',
-	'wordpress.com',
 	'img.youtube.com',
 	'upload.wikimedia.org',
-	'photobucket.com',
 );
 
 // STOP MODIFYING HERE!
