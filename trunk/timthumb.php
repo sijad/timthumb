@@ -14,7 +14,7 @@ define ('CACHE_SIZE', 1000);				// number of files to store before clearing cach
 define ('CACHE_CLEAR', 20);					// maximum number of files to delete on each cache clear
 define ('CACHE_USE', TRUE);					// use the cache files? (mostly for testing)
 define ('CACHE_MAX_AGE', 864000);			// time to cache in the browser
-define ('VERSION', '1.33');					// version number (to force a cache refresh)
+define ('VERSION', '1.34');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
@@ -656,6 +656,8 @@ function check_external ($src) {
 				}
 			}
 
+			$isAllowedSite = false;
+
 			// check allowed sites (if required)
 			if (ALLOW_EXTERNAL) {
 
@@ -663,9 +665,8 @@ function check_external ($src) {
 
 			} else {
 
-				$isAllowedSite = false;
 				foreach ($allowedSites as $site) {
-					if (strpos (strtolower ($url_info['host'] . '/'), $site) !== false) {
+					if (preg_match ('/(?:^|\.)' . $site . '$/i', $url_info['host'])) {
 						$isAllowedSite = true;
 					}
 				}
