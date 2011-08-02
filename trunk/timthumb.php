@@ -641,18 +641,12 @@ function check_external ($src) {
 				display_error ('source filename invalid');
 			}			
 
-			// convert youtube video urls
-			// need to tidy up the code
-
-			if ($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') {
-				parse_str ($url_info['query']);
-
-				if (isset ($v)) {
-					$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
-					$url_info['host'] = 'img.youtube.com';
-				}
+			if (($url_info['host'] == 'www.youtube.com' || $url_info['host'] == 'youtube.com') && preg_match ('/v=([^&]+)/i', $url_info['query'], $matches)) {
+				$v = $matches[1];
+				$src = 'http://img.youtube.com/vi/' . $v . '/0.jpg';
+				$url_info['host'] = 'img.youtube.com';
 			}
-
+			
 			$isAllowedSite = false;
 
 			// check allowed sites (if required)
