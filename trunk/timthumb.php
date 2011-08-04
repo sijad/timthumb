@@ -18,7 +18,6 @@ define ('VERSION', '1.35');					// version number (to force a cache refresh)
 define ('DIRECTORY_CACHE', './cache');		// cache directory
 define ('MAX_WIDTH', 1500);					// maximum image width
 define ('MAX_HEIGHT', 1500);				// maximum image height
-define ('ALLOW_EXTERNAL', FALSE);			// allow external website (override security precaution - not advised!)
 define ('MEMORY_LIMIT', '30M');				// set PHP memory limit
 define ('MAX_FILE_SIZE', 1500000);			// file size limit to prevent possible DOS attacks (roughly 1.5 megabytes)
 define ('CURL_TIMEOUT', 10);				// timeout duration. Tweak as you require (lower = better)
@@ -46,7 +45,7 @@ $src = clean_source ($src);
 $mime_type = mime_type ($src);
 
 // used for external websites only
-$external_data_string = '';
+$external_data_string = 0;
 
 // generic file handle for reading and writing to files
 $fh = '';
@@ -311,7 +310,7 @@ function show_image ($mime_type, $canvas) {
 
     global $quality;
 
-    $cache_file = get_cache_file ($mime_type);
+    $cache_file = get_cache_file ();
 
 	switch ($mime_type) {
 		case 'jpg':
@@ -524,7 +523,7 @@ function show_cache_file ($mime_type) {
 		}
 	}
 
-	$cache_file = get_cache_file ($mime_type);
+	$cache_file = get_cache_file ();
 
 	if (file_exists ($cache_file)) {
 
@@ -534,7 +533,7 @@ function show_cache_file ($mime_type) {
 
 		// send content headers then display image
 		header ('Content-Type: image/' . get_file_type ($mime_type));
-		header ('Accept-Ranges: bytes');
+		header ('Accept-Ranges: none');
 		header ('Last-Modified: ' . $gmdate_modified);
 		header ('Content-Length: ' . filesize ($cache_file));
 		header ('Cache-Control: max-age=' . CACHE_MAX_AGE . ', must-revalidate');
@@ -584,17 +583,16 @@ function get_file_type ($extension) {
 /**
  *
  * @staticvar string $cache_file
- * @param <type> $mime_type
  * @return string
  */
-function get_cache_file ($mime_type) {
+function get_cache_file () {
 
     static $cache_file;
 	global $src;
 
     if (!$cache_file) {
 		// filemtime is used to make sure updated files get recached
-		$cache_file = DIRECTORY_CACHE . '/' . md5 ($_SERVER ['QUERY_STRING'] . VERSION . filemtime ($src) . $_SERVER['DOCUMENT_ROOT']) . '.' . $mime_type;
+		$cache_file = DIRECTORY_CACHE . '/' . md5 ($_SERVER ['QUERY_STRING'] . VERSION . filemtime ($src) . $_SERVER['DOCUMENT_ROOT']) . '.txt';
     }
 
     return $cache_file;
@@ -624,7 +622,7 @@ function check_external ($src) {
 	global $allowedSites;
 
 	// work out file details
-	$filename = 'external_' . md5 ($src);
+	$filename = 'external_' . md5 ($src) . '.txt';
 	$local_filepath = DIRECTORY_CACHE . '/' . $filename;
 	
 	// only do this stuff the file doesn't already exist
@@ -651,18 +649,10 @@ function check_external ($src) {
 			$isAllowedSite = false;
 
 			// check allowed sites (if required)
-			if (ALLOW_EXTERNAL) {
-
-				$isAllowedSite = true;
-
-			} else {
-
-				foreach ($allowedSites as $site) {
-					if (preg_match ('/(?:^|\.)' . $site . '$/i', $url_info['host'])) {
-						$isAllowedSite = true;
-					}
+			foreach ($allowedSites as $site) {
+				if (preg_match ('/(?:^|\.)' . $site . '$/i', $url_info['host'])) {
+					$isAllowedSite = true;
 				}
-
 			}
 
 			// if allowed
@@ -681,9 +671,8 @@ function check_external ($src) {
 					curl_setopt ($ch, CURLOPT_RETURNTRANSFER, TRUE);
 					curl_setopt ($ch, CURLOPT_HEADER, 0);
 					curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-					curl_setopt ($ch, CURLOPT_FILE, $fh);
 					curl_setopt ($ch, CURLOPT_WRITEFUNCTION, 'curl_write');
-
+						
 					// error so die
 					if (curl_exec ($ch) === FALSE) {
 						unlink ($local_filepath);
@@ -755,9 +744,9 @@ function curl_write ($handle, $data) {
 	global $external_data_string, $fh;
 
 	fwrite ($fh, $data);
-	$external_data_string .= $data;
+	$external_data_string += strlen ($data);
 
-	if (strlen ($external_data_string) > MAX_FILE_SIZE) {
+	if ($external_data_string > MAX_FILE_SIZE) {
 		return 0;
 	} else {
 		return strlen ($data);
