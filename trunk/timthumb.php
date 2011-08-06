@@ -276,7 +276,7 @@ class timthumb {
 				$mtime = $this->localImageMTime;
 				$this->debug(3, "Local real file's modification time is $mtime");
 			} else if(is_file($this->cachefile)){ //If it's not a local request then use the mtime of the cached file to determine the 304
-				$mtime = filemtime($this->cachefile);
+				$mtime = @filemtime($this->cachefile);
 				$this->debug(3, "Cached file's modification time is $mtime");
 			}
 			if(! $mtime){ return false; }
@@ -308,7 +308,7 @@ class timthumb {
 				if(filesize($this->cachefile) < 1){
 					$this->debug(3, "Found an empty cachefile indicating a failed earlier request. Checking how old it is.");
 					//Fetching error occured previously
-					if(time() - filemtime($this->cachefile) > WAIT_BETWEEN_FETCH_ERRORS){
+					if(time() - @filemtime($this->cachefile) > WAIT_BETWEEN_FETCH_ERRORS){
 						$this->debug(3, "File is older than " . WAIT_BETWEEN_FETCH_ERRORS . " seconds. Deleting and returning false so app can try and load file.");
 						unlink($this->cachefile);
 						return false; //to indicate we didn't serve from cache and app should try and load
