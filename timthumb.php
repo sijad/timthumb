@@ -14,7 +14,7 @@
 //Main config vars
 define ('VERSION', '2.0');				// Version of this script 
 define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
-define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
+define ('DEBUG_LEVEL', 3);				// Debug level 1 is less noisy and 3 is the most noisy
 define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
 define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being loaded on an external site, display a red "No Hotlinking" gif.
 
@@ -106,6 +106,8 @@ timthumb::start();
 
 class timthumb {
 	protected $src = "";
+	protected $localImage = "";
+	protected $localImageMTime = 0;
 	protected $url = false;
 	protected $myHost = "";
 	protected $isURL = false;
@@ -209,7 +211,18 @@ class timthumb {
 		}
 
 		$cachePrefix = ($this->isURL ? 'timthumb_ext_' : 'timthumb_int_');
-		$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . $_SERVER ['QUERY_STRING'] . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
+		if($this->isURL){
+			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . $_SERVER ['QUERY_STRING'] . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
+		} else {
+			$this->localImage = $this->getLocalImagePath($this->src);
+			if(! $this->localImage){
+				$this->error("Could not find the internal image you specified.");
+				return false;
+			}
+			$this->localImageMTime = @filemtime($this->localImage);
+			//We include the mtime of the local file in case in changes on disk.
+			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . $this->localImageMTime . $_SERVER ['QUERY_STRING'] . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
+		}
 		$this->debug(2, "Cache file is: " . $this->cachefile);
 
 		return true;
@@ -254,8 +267,31 @@ class timthumb {
 	}
 	protected function tryBrowserCache(){
 		if(BROWSER_CACHE_DISABLE){ $this->debug(3, "Browser caching is disabled"); return false; }
-		if (!empty ($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-			if (strtotime ($_SERVER['HTTP_IF_MODIFIED_SINCE']) < strtotime ('now')) {
+		if(!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) ){
+			$this->debug(3, "Got a conditional get");
+			$mtime = false;
+			//We've already verified that the local image and cached images both exist in the constructor
+			// so we won't have a condition here where the local file has been deleted but the cache file remains and we're returning 304 
+			if($this->localImageMTime){
+				$mtime = $this->localImageMTime;
+				$this->debug(3, "Local real file's modification time is $mtime");
+			} else if(is_file($this->cachefile)){ //If it's not a local request then use the mtime of the cached file to determine the 304
+				$mtime = filemtime($this->cachefile);
+				$this->debug(3, "Cached file's modification time is $mtime");
+			}
+			if(! $mtime){ return false; }
+
+			$iftime = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+			$this->debug(3, "The conditional get's if-modified-since unixtime is $iftime");
+			if($iftime < 1){
+				$this->debug(3, "Got an invalid conditional get modified since time. Returning false.");
+				return false;
+			}
+			if($iftime < $mtime){ //Real file or cache file has been modified since last request, so force refetch.
+				$this->debug(3, "File has been modified since last fetch.");
+				return false;
+			} else { //Otherwise serve a 304
+				$this->debug(3, "File has not been modified since last get, so serving a 304.");
 				header ('HTTP/1.1 304 Not Modified');
 				$this->debug(1, "Returning 304 not modified");
 				return true;
@@ -320,17 +356,12 @@ class timthumb {
 		echo '<br />TimThumb version : ' . VERSION . '</pre>';
 	}
 	protected function serveInternalImage(){
-		$localImage = $this->getLocalImagePath($this->src);
-		$this->debug(3, "Local image path is $localImage");
-		if(! $localImage){
-			$this->error("Could not find the internal image you specified.");
+		$this->debug(3, "Local image path is $this->localImage");
+		if(! $this->localImage){
+			$this->sanityFail("localImage not set after verifying it earlier in the code.");
 			return false;
 		}
-		if(! is_file($localImage)){
-			$this->error("The local file you specified is not a valid file.");
-			return false;
-		}
-		$fileSize = filesize($localImage);
+		$fileSize = filesize($this->localImage);
 		if($fileSize > MAX_FILE_SIZE){
 			$this->error("The file you specified is greater than the maximum allowed file size.");
 			return false;
@@ -340,7 +371,7 @@ class timthumb {
 			return false;
 		}
 		$this->debug(3, "Calling processImageAndWriteToCache() for local image.");
-		if($this->processImageAndWriteToCache($localImage)){
+		if($this->processImageAndWriteToCache($this->localImage)){
 			$this->serveCacheFile();
 			return true;
 		} else { 
@@ -628,7 +659,7 @@ class timthumb {
 			imagepng($canvas, $tempfile, floor($quality * 0.09));
 			$imgType = 'gif';
 		} else {
-			return $this->error("Sanity failed. Could not match mime type after verifying it previously.");
+			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
 		$this->debug(3, "Rewriting image with security header.");
 		$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
@@ -663,27 +694,55 @@ class timthumb {
 	}
 	protected function getLocalImagePath($src){
 		$this->debug(1, "Getting local image path for $src");
-		if (file_exists ($_SERVER['DOCUMENT_ROOT'] . '/' . $src)) {
-			$this->debug(3, "Found file as " . $_SERVER['DOCUMENT_ROOT'] . '/' . $src);
-			return $_SERVER['DOCUMENT_ROOT'] . '/' . $src;
+		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
+		$docRoot = @$_SERVER['DOCUMENT_ROOT'];
+		if(!isset($docRoot)){ 
+			$this->debug(3, "DOCUMENT_ROOT is not set. This is probably windows. Starting search 1.");
+			if(isset($_SERVER['SCRIPT_FILENAME'])){
+				$docRoot = str_replace( '\\', '/', substr($_SERVER['SCRIPT_FILENAME'], 0, 0-strlen($_SERVER['PHP_SELF'])));
+				$this->debug(3, "Generated docRoot using SCRIPT_FILENAME and PHP_SELF as: $docRoot");
+			} 
 		}
-		$base = $_SERVER['DOCUMENT_ROOT'];
-		foreach (explode('/', str_replace($_SERVER['DOCUMENT_ROOT'], '', $_SERVER['SCRIPT_FILENAME'])) as $sub){
+		if(!isset($docRoot)){ 
+			$this->debug(3, "DOCUMENT_ROOT still is not set. Starting search 2.");
+			if(isset($_SERVER['PATH_TRANSLATED'])){
+				$docRoot = str_replace( '\\', '/', substr(str_replace('\\\\', '\\', $_SERVER['PATH_TRANSLATED']), 0, 0-strlen($_SERVER['PHP_SELF'])));
+				$this->debug(3, "Generated docRoot using PATH_TRANSLATED and PHP_SELF as: $docRoot");
+			} 
+		}
+		if(! $docRoot){
+			$this->debug(3, "We have no document root set, so as a last resort, lets check if the image is in the current dir and serve that.");
+			//We don't support serving images outside the current dir if we don't have a doc root for security reasons.
+			$file = preg_replace('/^.*?([^\/\\\\]+)$/', '$1', $src); //strip off any path info and just leave the filename.
+			if(is_file($file)){
+				return realpath($file);
+			}
+			return $this->error("Could not find your website document root and the file specified doesn't exist in timthumbs directory. We don't support serving files outside timthumb's directory without a document root for security reasons.");
+		}
+		$docRoot = preg_replace('/\/$/', '', $docRoot); 
+		$this->debug(3, "Doc root is: " . $docRoot);
+
+		if (file_exists ($docRoot . '/' . $src)) {
+			$this->debug(3, "Found file as " . $docRoot . '/' . $src);
+			$real = realpath($docRoot . '/' . $src);
+			if(strpos($real, $docRoot) !== 0){
+				$this->debug(1, "Security block: The file specified occurs outside the document root.");
+				return false;
+			}
+			return $real;
+		}
+		$base = $docRoot;
+		foreach (explode('/', str_replace($docRoot, '', $_SERVER['SCRIPT_FILENAME'])) as $sub){
 			$base .= $sub . '/';
 			$this->debug(3, "Trying file as: " . $base . $src);
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
-				return $base . $src;
-			}
-		}
-		if (!isset ($_SERVER['DOCUMENT_ROOT'])) { //Mostly taken from the original source. I don't have a MS server to test this and it seems dodgy, so a second pair of eyes would be good here. 
-			$this->debug(3, "DOCUMENT_ROOT is not set so this is probably Windows.");
-			$path = str_replace ("/", "\\", $_SERVER['ORIG_PATH_INFO']);
-			$path = str_replace ($path, '', $_SERVER['SCRIPT_FILENAME']);
-			$this->debug(3, "Trying file: " . realpath($path) . '/' . $src);
-			if (file_exists (realpath($path) . '/' . $src)) {
-				$this->debug(3, "Found file as: " . realpath($path) . '/' . $src);
-				return realpath ($path) . '/' . $src;
+				$real = realpath($base . $src);
+				if(strpos($real, $docRoot) !== 0){
+					$this->debug(1, "Security block: The file specified occurs outside the document root.");
+					return false;
+				}
+				return $real;
 			}
 		}
 		return false;
@@ -918,6 +977,9 @@ class timthumb {
 			$this->lastBenchTime = microtime(true);
 			error_log("TimThumb Debug line " . __LINE__ . " [$execTime : $tick]: $msg");
 		}
+	}
+	protected function sanityFail($msg){
+		return $this->error("There is a problem in the timthumb code. Message: $msg Please report this error at <a href='http://code.google.com/p/timthumb/issues/list'>timthumb's bug tracking page</a>.");
 	}
 }
 ?>
