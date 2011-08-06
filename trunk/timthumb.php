@@ -12,7 +12,7 @@
  */
 
 //Main config vars
-define ('VERSION', '2.0');				// Version of this script 
+define ('VERSION', '2.1');				// Version of this script 
 define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
 define ('DEBUG_LEVEL', 3);				// Debug level 1 is less noisy and 3 is the most noisy
 define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
