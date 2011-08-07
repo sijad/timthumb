@@ -20,7 +20,7 @@ define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being 
 
 //Image fetching and caching
 define ('ALLOW_EXTERNAL', TRUE);			// Allow image fetching from external websites. Will check against ALLOWED_SITES if ALLOW_ALL_EXTERNAL_SITES is false
-define ('ALLOW_ALL_EXTERNAL_SITES', true);		// Less secure. 
+define ('ALLOW_ALL_EXTERNAL_SITES', false);		// Less secure. 
 define ('FILE_CACHE_ENABLED', TRUE);			// Should we store resized/modified images on disk to speed things up?
 define ('FILE_CACHE_TIME_BETWEEN_CLEANS', 86400);	// How often the cache is cleaned 
 define ('FILE_CACHE_MAX_FILE_AGE', 86400);		// How old does a file have to be to be deleted from the cache
