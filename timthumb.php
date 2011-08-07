@@ -1069,6 +1069,7 @@ class timthumb {
 	}
 	protected function getURL($url, $tempfile){
 		$this->lastURLError = false;
+		$url = preg_replace('/ /', '%20', $url);
 		if(function_exists('curl_init')){
 			$this->debug(3, "Curl is installed so using it to fetch URL.");
 			self::$curlFH = fopen($tempfile, 'w');
@@ -1077,6 +1078,7 @@ class timthumb {
 				return false;
 			}
 			self::$curlDataWritten = 0;
+			$this->debug(3, "Fetching url with curl: $url");
 			$curl = curl_init($url);
 			curl_setopt ($curl, CURLOPT_TIMEOUT, CURL_TIMEOUT);
 			curl_setopt ($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/534.30 (KHTML, like Gecko) Chrome/12.0.742.122 Safari/534.30");
