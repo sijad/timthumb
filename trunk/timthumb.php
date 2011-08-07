@@ -14,13 +14,13 @@
 //Main config vars
 define ('VERSION', '2.3');				// Version of this script 
 define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
-define ('DEBUG_LEVEL', 3);				// Debug level 1 is less noisy and 3 is the most noisy
+define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
 define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
 define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being loaded on an external site, display a red "No Hotlinking" gif.
 
 //Image fetching and caching
 define ('ALLOW_EXTERNAL', TRUE);			// Allow image fetching from external websites. Will check against ALLOWED_SITES if ALLOW_ALL_EXTERNAL_SITES is false
-define ('ALLOW_ALL_EXTERNAL_SITES', FALSE);		// Less secure. 
+define ('ALLOW_ALL_EXTERNAL_SITES', true);		// Less secure. 
 define ('FILE_CACHE_ENABLED', TRUE);			// Should we store resized/modified images on disk to speed things up?
 define ('FILE_CACHE_TIME_BETWEEN_CLEANS', 10);	// How often the cache is cleaned 
 define ('FILE_CACHE_MAX_FILE_AGE', 10);		// How old does a file have to be to be deleted from the cache
@@ -655,57 +655,23 @@ class timthumb {
 			imageconvolution ($canvas, $sharpenMatrix, $divisor, $offset);
 
 		}
-		$tempfile = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
+		$this->debug(3, "Tempfile $tempfile");
 		$imgType = "";
+		$tempfile = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 		if(preg_match('/^image\/(?:jpg|jpeg)$/i', $mimeType)){ 
 			$imgType = 'jpg';
-			$tempfile .= '.' . $imgType;
 			imagejpeg($canvas, $tempfile, $quality); 
 		} else if(preg_match('/^image\/png$/i', $mimeType)){ 
 			$imgType = 'png';
-			$tempfile .= '.' . $imgType;
 			imagepng($canvas, $tempfile, floor($quality * 0.09));
 		} else if(preg_match('/^image\/gif$/i', $mimeType)){
 			$imgType = 'gif';
-			$tempfile .= '.' . $imgType;
 			imagepng($canvas, $tempfile, floor($quality * 0.09));
 		} else {
 			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
-		if(SMUSHIT_ENABLED){
-			$this->debug(3, "Smushit is enabled. Trying to compress.");
-			$uri = realpath(FILE_CACHE_DIRECTORY);
-			$uri = str_replace($this->docRoot, '', $uri);
-			if(preg_match('/\/?([^\/]+)$/', $tempfile, $matches)){
-				$uri .= '/' . $matches[1];
-			} else {
-				$this->sanityFail("Could not match tempfile.");
-			}
-			$tempfile5 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
-			$smushURL = 'http://www.smushit.com/ws.php?img=http://' . $this->myHost . $uri;
-			$this->debug(3, "Temp file URL for smushit is $smushURL");
-			if($this->getURL($smushURL, $tempfile5)){
-				$json = file_get_contents($tempfile5);
-				$this->debug(3, "Got the following from smushit: $json");
-				@unlink($tempfile5);
-				if($json){
-					$obj = @json_decode($json);
-					if(is_object($obj) && property_exists($obj, 'dest')){
-						$this->debug(3, "Got a compressed file's URL from smushit");
-						$tempfile6 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
-						if($this->getURL($obj['dest'], $tempfile6)){
-							$todel = $tempfile;
-							$tempfile = $tempfile6;
-							@unlink($todel);
-						}
-					} else if(is_object($obj) && property_exists($obj, 'error')){
-						$this->debug(3, "Smushit is not compressing files. Response was: " . $obj->error);
-					}
-				}
-			} else {
-				$this->debug(3, "Could not fetch smushit url: " . $this->lastURLError);
-			}
-		}
+		$this->debug(3, "Tempfile $tempfile");
+
 		if(PNGCRUSH_ENABLED){
 			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 			$exec = PNGCRUSH_PATH;
