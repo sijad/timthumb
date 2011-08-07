@@ -12,7 +12,7 @@
  */
 
 //Main config vars
-define ('VERSION', '2.2');				// Version of this script 
+define ('VERSION', '2.3');				// Version of this script 
 define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
 define ('DEBUG_LEVEL', 3);				// Debug level 1 is less noisy and 3 is the most noisy
 define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
@@ -42,6 +42,7 @@ define ('OPTIPNG_ENABLED', false);			//optipng and pngcrush are the same speed w
 define ('PNGCRUSH_ENABLED', false);			//On smaller images they are both fairly fast. On larger images they can take 2 seconds or more. 
 define ('OPTIPNG_PATH', '/usr/bin/optipng');		//So use these at your discretion. If you'd like detailed output on execution time and 
 define ('PNGCRUSH_PATH', '/usr/bin/pngcrush');		//how much they are compressing files, set DEBUG_ON = true and set DEBUG_LEVEL=1 or 3 for a lot more info.
+define ('SMUSHIT_ENABLED', false);			//Alpha feature, untested. Smushit is also frequently down, so don't rely on this.
 
 /*
 	-------====Website Screenshots configuration - BETA====-------
@@ -111,6 +112,8 @@ timthumb::start();
 
 class timthumb {
 	protected $src = "";
+	protected $docRoot = "";
+	protected $lastURLError = false;
 	protected $localImage = "";
 	protected $localImageMTime = 0;
 	protected $url = false;
@@ -149,6 +152,7 @@ class timthumb {
 		global $ALLOWED_SITES;
 		$this->startTime = microtime(true);
 		$this->debug(1, "Starting new request from " . $this->getIP() . " to " . $_SERVER['REQUEST_URI']);
+		$this->calcDocRoot();
 		//On windows systems I'm assuming fileinode returns an empty string or a number that doesn't change. Check this.
 		$this->salt = @filemtime(__FILE__) . '-' . @fileinode(__FILE__);
 		$this->debug(3, "Salt is: " . $this->salt);
@@ -654,18 +658,54 @@ class timthumb {
 		$tempfile = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 		$imgType = "";
 		if(preg_match('/^image\/(?:jpg|jpeg)$/i', $mimeType)){ 
-			imagejpeg($canvas, $tempfile, $quality); 
 			$imgType = 'jpg';
+			$tempfile .= '.' . $imgType;
+			imagejpeg($canvas, $tempfile, $quality); 
 		} else if(preg_match('/^image\/png$/i', $mimeType)){ 
-			imagepng($canvas, $tempfile, floor($quality * 0.09));
 			$imgType = 'png';
-		} else if(preg_match('/^image\/gif$/i', $mimeType)){
+			$tempfile .= '.' . $imgType;
 			imagepng($canvas, $tempfile, floor($quality * 0.09));
+		} else if(preg_match('/^image\/gif$/i', $mimeType)){
 			$imgType = 'gif';
+			$tempfile .= '.' . $imgType;
+			imagepng($canvas, $tempfile, floor($quality * 0.09));
 		} else {
 			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
-
+		if(SMUSHIT_ENABLED){
+			$this->debug(3, "Smushit is enabled. Trying to compress.");
+			$uri = realpath(FILE_CACHE_DIRECTORY);
+			$uri = str_replace($this->docRoot, '', $uri);
+			if(preg_match('/\/?([^\/]+)$/', $tempfile, $matches)){
+				$uri .= '/' . $matches[1];
+			} else {
+				$this->sanityFail("Could not match tempfile.");
+			}
+			$tempfile5 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
+			$smushURL = 'http://www.smushit.com/ws.php?img=http://' . $this->myHost . $uri;
+			$this->debug(3, "Temp file URL for smushit is $smushURL");
+			if($this->getURL($smushURL, $tempfile5)){
+				$json = file_get_contents($tempfile5);
+				$this->debug(3, "Got the following from smushit: $json");
+				@unlink($tempfile5);
+				if($json){
+					$obj = @json_decode($json);
+					if(is_object($obj) && property_exists($obj, 'dest')){
+						$this->debug(3, "Got a compressed file's URL from smushit");
+						$tempfile6 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
+						if($this->getURL($obj['dest'], $tempfile6)){
+							$todel = $tempfile;
+							$tempfile = $tempfile6;
+							@unlink($todel);
+						}
+					} else if(is_object($obj) && property_exists($obj, 'error')){
+						$this->debug(3, "Smushit is not compressing files. Response was: " . $obj->error);
+					}
+				}
+			} else {
+				$this->debug(3, "Could not fetch smushit url: " . $this->lastURLError);
+			}
+		}
 		if(PNGCRUSH_ENABLED){
 			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 			$exec = PNGCRUSH_PATH;
@@ -692,11 +732,9 @@ class timthumb {
 			$exec = OPTIPNG_PATH;
 			$this->debug(3, "optipng'ing $tempfile");
 			$presize = filesize($tempfile);
-			error_log($presize);
 			$out = `$exec -o1 $tempfile`; //you can use up to -o7 but it really slows things down
 			clearstatcache();
 			$aftersize = filesize($tempfile);
-			error_log($aftersize);
 			$sizeDrop = $presize - $aftersize;
 			if($sizeDrop > 0){
 				$this->debug(1, "optipng reduced size by $sizeDrop");
@@ -737,9 +775,7 @@ class timthumb {
 		imagedestroy($canvas);
 		return true;
 	}
-	protected function getLocalImagePath($src){
-		$this->debug(1, "Getting local image path for $src");
-		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
+	protected function calcDocRoot(){
 		$docRoot = @$_SERVER['DOCUMENT_ROOT'];
 		if(!isset($docRoot)){ 
 			$this->debug(3, "DOCUMENT_ROOT is not set. This is probably windows. Starting search 1.");
@@ -755,7 +791,16 @@ class timthumb {
 				$this->debug(3, "Generated docRoot using PATH_TRANSLATED and PHP_SELF as: $docRoot");
 			} 
 		}
-		if(! $docRoot){
+		if($docRoot){ $docRoot = preg_replace('/\/$/', '', $docRoot); }
+		$this->debug(3, "Doc root is: " . $docRoot);
+		$this->docRoot = $docRoot;
+
+	}
+	protected function getLocalImagePath($src){
+		$this->debug(1, "Getting local image path for $src");
+		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
+
+		if(! $this->docRoot){
 			$this->debug(3, "We have no document root set, so as a last resort, lets check if the image is in the current dir and serve that.");
 			//We don't support serving images outside the current dir if we don't have a doc root for security reasons.
 			$file = preg_replace('/^.*?([^\/\\\\]+)$/', '$1', $src); //strip off any path info and just leave the filename.
@@ -764,26 +809,24 @@ class timthumb {
 			}
 			return $this->error("Could not find your website document root and the file specified doesn't exist in timthumbs directory. We don't support serving files outside timthumb's directory without a document root for security reasons.");
 		}
-		$docRoot = preg_replace('/\/$/', '', $docRoot); 
-		$this->debug(3, "Doc root is: " . $docRoot);
 
-		if (file_exists ($docRoot . '/' . $src)) {
-			$this->debug(3, "Found file as " . $docRoot . '/' . $src);
-			$real = realpath($docRoot . '/' . $src);
-			if(strpos($real, $docRoot) !== 0){
+		if (file_exists ($this->docRoot . '/' . $src)) {
+			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
+			$real = realpath($this->docRoot . '/' . $src);
+			if(strpos($real, $this->docRoot) !== 0){
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
 				return false;
 			}
 			return $real;
 		}
-		$base = $docRoot;
-		foreach (explode('/', str_replace($docRoot, '', $_SERVER['SCRIPT_FILENAME'])) as $sub){
+		$base = $this->docRoot;
+		foreach (explode('/', str_replace($this->docRoot, '', $_SERVER['SCRIPT_FILENAME'])) as $sub){
 			$base .= $sub . '/';
 			$this->debug(3, "Trying file as: " . $base . $src);
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = realpath($base . $src);
-				if(strpos($real, $docRoot) !== 0){
+				if(strpos($real, $this->docRoot) !== 0){
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
 					return false;
 				}
@@ -835,7 +878,6 @@ class timthumb {
 		$out = `$command`;
 		$this->debug(3, "Received output: $out");
 		if(! is_file($tempfile)){
-			error_log("CutyCapt failed with the following output: " . $out);
 			return $this->error("The command to create a thumbnail failed.");
 		}
 		$this->cropTop = true;
@@ -854,45 +896,15 @@ class timthumb {
 		$tempfile = tempnam($this->cacheDirectory, 'timthumb');
 		$this->debug(3, "Fetching external image into temporary file $tempfile");
 		$this->toDelete($tempfile);
-
-		if(function_exists('curl_init')){
-			$this->debug(3, "Curl is installed so using it to fetch image.");
-			self::$curlFH = fopen($tempfile, 'w');
-			self::$curlDataWritten = 0;
-			$curl = curl_init($this->src);
-			curl_setopt ($curl, CURLOPT_TIMEOUT, CURL_TIMEOUT);
-			curl_setopt ($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/534.30 (KHTML, like Gecko) Chrome/12.0.742.122 Safari/534.30");
-			curl_setopt ($curl, CURLOPT_RETURNTRANSFER, TRUE);
-			curl_setopt ($curl, CURLOPT_HEADER, 0);
-			curl_setopt ($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-			curl_setopt ($curl, CURLOPT_WRITEFUNCTION, 'timthumb::curlWrite');
-			curl_setopt ($curl, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt ($curl, CURLOPT_MAXREDIRS, 10);
-			
-			$curlResult = curl_exec($curl);
-			curl_close($curl);
-			fclose(self::$curlFH);
-
-			if(! $curlResult){
-				$this->debug(3, "Error fetching using curl: " . curl_error($curl));
-				unlink($this->cachefile);
-				touch($this->cachefile);
-				$this->error("Error reading the URL you specified from remote host." . curl_error($curl));
-				return false;
-			}
-		} else {
-			$img = @file_get_contents ($this->src);
-			if($img === false){
-				$err = error_get_last();
-				$this->debug(3, "Error trying to fetch remote image using file_get_contents: $err");
-				$this->error("Could not fetch remote file {$this->src}: " . $err['message']);
-				return false;
-			}
-			if(! file_put_contents($tempfile, $img)){
-				$this->error("Could not write the contents of remote image to temporary file.");
-				return false;
-			}
+		#fetch file here
+		if(! $this->getURL($this->src, $tempfile)){
+			unlink($this->cachefile);
+			touch($this->cachefile);
+			$this->debug(3, "Error fetching URL: " . $this->lastURLError);
+			$this->error("Error reading the URL you specified from remote host." . $this->lastURLError);
+			return false;
 		}
+
 		$mimeType = $this->getMimeType($tempfile);
 		if(! preg_match("/^image\/(?:jpg|jpeg|gif|png)$/i", $mimeType)){
 			$this->debug(3, "Remote file has invalid mime type: $mimeType");
@@ -1054,6 +1066,51 @@ class timthumb {
 			case 'G': case 'g': return (int)$size_str * 1073741824;
 			default: return $size_str;
 		}
+	}
+	protected function getURL($url, $tempfile){
+		$this->lastURLError = false;
+		if(function_exists('curl_init')){
+			$this->debug(3, "Curl is installed so using it to fetch URL.");
+			self::$curlFH = fopen($tempfile, 'w');
+			if(! self::$curlFH){
+				$this->error("Could not open $tempfile for writing.");
+				return false;
+			}
+			self::$curlDataWritten = 0;
+			$curl = curl_init($url);
+			curl_setopt ($curl, CURLOPT_TIMEOUT, CURL_TIMEOUT);
+			curl_setopt ($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/534.30 (KHTML, like Gecko) Chrome/12.0.742.122 Safari/534.30");
+			curl_setopt ($curl, CURLOPT_RETURNTRANSFER, TRUE);
+			curl_setopt ($curl, CURLOPT_HEADER, 0);
+			curl_setopt ($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+			curl_setopt ($curl, CURLOPT_WRITEFUNCTION, 'timthumb::curlWrite');
+			curl_setopt ($curl, CURLOPT_FOLLOWLOCATION, true);
+			curl_setopt ($curl, CURLOPT_MAXREDIRS, 10);
+			
+			$curlResult = curl_exec($curl);
+			fclose(self::$curlFH);
+
+			if($curlResult){
+				curl_close($curl);
+				return true;
+			} else {
+				$this->lastURLError = curl_error($curl);
+				curl_close($curl);
+				return false;
+			}
+		} else {
+			$img = @file_get_contents ($url);
+			if($img === false){
+				$this->lastURLError = error_get_last();
+				return false;
+			}
+			if(! file_put_contents($tempfile, $img)){
+				$this->error("Could not write to $tempfile.");
+				return false;
+			}
+			return true;
+		}
+
 	}
 }
 ?>
