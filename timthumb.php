@@ -672,7 +672,7 @@ class timthumb {
 			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
 
-		if( OPTIPNG_PATH && is_file(OPTIPNG_PATH)){
+		if( OPTIPNG_PATH && @is_file(OPTIPNG_PATH)){
 			$exec = OPTIPNG_PATH;
 			$this->debug(3, "optipng'ing $tempfile");
 			$presize = filesize($tempfile);
@@ -687,7 +687,7 @@ class timthumb {
 			} else {
 				$this->debug(1, "optipng did not change image size.");
 			}
-		} else if(PNGCRUSH_PATH && is_file(PNGCRUSH_PATH)){
+		} else if(PNGCRUSH_PATH && @is_file(PNGCRUSH_PATH)){
 			$exec = PNGCRUSH_PATH;
 			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 			$this->debug(3, "pngcrush'ing $tempfile to $tempfile2");
