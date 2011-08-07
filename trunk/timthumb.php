@@ -12,7 +12,7 @@
  */
 
 //Main config vars
-define ('VERSION', '2.1');				// Version of this script 
+define ('VERSION', '2.2');				// Version of this script 
 define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
 define ('DEBUG_LEVEL', 3);				// Debug level 1 is less noisy and 3 is the most noisy
 define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
@@ -29,7 +29,7 @@ define ('FILE_CACHE_SUFFIX', '.timthumb.txt');		// What to put at the end of all
 define ('FILE_CACHE_DIRECTORY', './cache');		// Directory where images are cached. Left blank it will use the system temporary directory (which is better for security)
 define ('MAX_FILE_SIZE', 10485760);			// 10 Megs is 10485760. This is the max internal or external file size that we'll process.  
 define ('CURL_TIMEOUT', 10);				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
-
+define ('WAIT_BETWEEN_FETCH_ERRORS', 10);		//Time to wait between errors fetching remote file
 //Browser caching
 define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
 define ('BROWSER_CACHE_DISABLE', false);			// Use for testing if you want to disable all browser caching
@@ -422,9 +422,8 @@ class timthumb {
 		return false;
 	}
 	protected function processImageAndWriteToCache($localImage){
-		$imageInfo = getimagesize($localImage);
-		$mimeType = $imageInfo['mime'];
-		$this->debug(3, "Mime type of image is {$imageInfo['mime']}");
+		$mimeType = $this->getMimeType($localImage);
+		$this->debug(3, "Mime type of image is $mimeType");
 		if(! preg_match('/^image\/(?:gif|jpg|jpeg|png)$/i', $mimeType)){
 			return $this->error("The image being resized is not a valid gif, jpg or png.");
 		}
@@ -677,7 +676,7 @@ class timthumb {
 			$this->debug(3, "pngcrush'ing $tempfile to $tempfile2");
 			$out = `$exec $tempfile $tempfile2`;
 			$todel = "";
-			if(is_file($tempfile2) && getimagesize($tempfile2)){
+			if(is_file($tempfile2)){
 				$sizeDrop = filesize($tempfile) - filesize($tempfile2);
 				if($sizeDrop > 0){
 					$this->debug(1, "pngcrush was succesful and gave a $sizeDrop byte size reduction");
@@ -872,6 +871,8 @@ class timthumb {
 			curl_setopt ($curl, CURLOPT_HEADER, 0);
 			curl_setopt ($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 			curl_setopt ($curl, CURLOPT_WRITEFUNCTION, 'timthumb::curlWrite');
+			curl_setopt ($curl, CURLOPT_FOLLOWLOCATION, true);
+			curl_setopt ($curl, CURLOPT_MAXREDIRS, 10);
 			
 			$curlResult = curl_exec($curl);
 			curl_close($curl);
@@ -897,10 +898,10 @@ class timthumb {
 				return false;
 			}
 		}
-		$imageInfo = getimagesize($tempfile);
-		if(! preg_match("/^image\/(?:jpg|jpeg|gif|png)$/i", $imageInfo['mime'])){
-			$this->debug(3, "Remote file has invalid mime type: {$imageInfo['mime']}");
-			unlink($this->cachefile);
+		$mimeType = $this->getMimeType($tempfile);
+		if(! preg_match("/^image\/(?:jpg|jpeg|gif|png)$/i", $mimeType)){
+			$this->debug(3, "Remote file has invalid mime type: $mimeType");
+			@unlink($this->cachefile);
 			touch($this->cachefile);
 			$this->error("The remote file is not a valid image.");
 			return false;
@@ -1031,6 +1032,13 @@ class timthumb {
 	}
 	protected function sanityFail($msg){
 		return $this->error("There is a problem in the timthumb code. Message: $msg Please report this error at <a href='http://code.google.com/p/timthumb/issues/list'>timthumb's bug tracking page</a>.");
+	}
+	protected function getMimeType($file){
+		$info = getimagesize($file);
+		if(is_array($info) && $info['mime']){
+			return $info['mime'];
+		}
+		return '';
 	}
 }
 ?>
