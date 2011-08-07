@@ -34,9 +34,15 @@ define ('CURL_TIMEOUT', 10);				// Timeout duration for Curl. This only applies 
 define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
 define ('BROWSER_CACHE_DISABLE', false);			// Use for testing if you want to disable all browser caching
 
-//Image width/height
+//Image size
 define ('MAX_WIDTH', 1500);				// Maximum image width
 define ('MAX_HEIGHT', 1500);				// Maximum image height
+
+//Image compression options if you have pngcrush or optipng installed
+define ('OPTIPNG_ENABLED', false);			//optipng and pngcrush are the same speed when optipng uses -o1 which is what timthumb uses.
+define ('PNGCRUSH_ENABLED', false);			//On smaller images they are both fairly fast. On larger images they can take 2 seconds or more. 
+define ('OPTIPNG_PATH', '/usr/bin/optipng');		//So use these at your discretion. If you'd like detailed output on execution time and 
+define ('PNGCRUSH_PATH', '/usr/bin/pngcrush');		//how much they are compressing files, set DEBUG_ON = true and set DEBUG_LEVEL=1 or 3 for a lot more info.
 
 /*
 	-------====Website Screenshots configuration - BETA====-------
@@ -270,8 +276,11 @@ class timthumb {
 		if(!empty($_SERVER['HTTP_IF_MODIFIED_SINCE']) ){
 			$this->debug(3, "Got a conditional get");
 			$mtime = false;
-			//We've already verified that the local image and cached images both exist in the constructor
-			// so we won't have a condition here where the local file has been deleted but the cache file remains and we're returning 304 
+			//We've already checked if the real file exists in the constructor
+			if(! is_file($this->cachefile)){
+				//If we don't have something cached, regenerate the cached image.
+				return false;
+			}
 			if($this->localImageMTime){
 				$mtime = $this->localImageMTime;
 				$this->debug(3, "Local real file's modification time is $mtime");
@@ -661,12 +670,54 @@ class timthumb {
 		} else {
 			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
+
+		if(PNGCRUSH_ENABLED){
+			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
+			$exec = PNGCRUSH_PATH;
+			$this->debug(3, "pngcrush'ing $tempfile to $tempfile2");
+			$out = `$exec $tempfile $tempfile2`;
+			$todel = "";
+			if(is_file($tempfile2) && getimagesize($tempfile2)){
+				$sizeDrop = filesize($tempfile) - filesize($tempfile2);
+				if($sizeDrop > 0){
+					$this->debug(1, "pngcrush was succesful and gave a $sizeDrop byte size reduction");
+					$todel = $tempfile;
+					$tempfile = $tempfile2;
+				} else {
+					$this->debug(1, "pngcrush did not reduce file size. Difference was $sizeDrop bytes.");
+					$todel = $tempfile2;
+				}
+			} else {
+				$this->debug(3, "pngcrush failed with output: $out");
+				$todel = $tempfile2;
+			}
+			@unlink($todel);
+		}
+		if(OPTIPNG_ENABLED){
+			$exec = OPTIPNG_PATH;
+			$this->debug(3, "optipng'ing $tempfile");
+			$presize = filesize($tempfile);
+			error_log($presize);
+			$out = `$exec -o1 $tempfile`; //you can use up to -o7 but it really slows things down
+			clearstatcache();
+			$aftersize = filesize($tempfile);
+			error_log($aftersize);
+			$sizeDrop = $presize - $aftersize;
+			if($sizeDrop > 0){
+				$this->debug(1, "optipng reduced size by $sizeDrop");
+			} else if($sizeDrop < 0){
+				$this->debug(1, "optipng increased size! Difference was: $sizeDrop");
+			} else {
+				$this->debug(1, "optipng did not change image size.");
+			}
+		}
+
 		$this->debug(3, "Rewriting image with security header.");
-		$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
+		$tempfile4 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 		$context = stream_context_create ();
 		$fp = fopen($tempfile,'r',0,$context);
-		file_put_contents($tempfile2, $this->filePrependSecurityBlock . $imgType . ' ?>'); //6 extra bytes, first 3 being image type 
-		file_put_contents($tempfile2, $fp, FILE_APPEND);
+		file_put_contents($tempfile4, $this->filePrependSecurityBlock . $imgType . ' ?' . '>'); //6 extra bytes, first 3 being image type 
+		file_put_contents($tempfile4, $fp, FILE_APPEND);
 		fclose($fp);
 		unlink($tempfile);
 		$this->debug(3, "Locking and replacing cache file.");
@@ -677,14 +728,14 @@ class timthumb {
 		}
 		if(flock($fh, LOCK_EX)){
 			@unlink($this->cachefile); //rename generally overwrites, but doing this in case of platform specific quirks. File might not exist yet.
-			rename($tempfile2, $this->cachefile);
+			rename($tempfile4, $this->cachefile);
 			flock($fh, LOCK_UN);
 			fclose($fh);
 			unlink($lockFile);
 		} else {
 			fclose($fh);
 			unlink($lockFile);
-			unlink($tempfile2);
+			unlink($tempfile4);
 			return $this->error("Could not get a lock for writing.");
 		}
 		$this->debug(3, "Done image replace with security header. Cleaning up and running cleanCache()");
