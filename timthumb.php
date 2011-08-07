@@ -12,7 +12,7 @@
  */
 
 //Main config vars
-define ('VERSION', '2.3');				// Version of this script 
+define ('VERSION', '2.4');				// Version of this script 
 define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
 define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
 define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
@@ -37,12 +37,9 @@ define ('BROWSER_CACHE_DISABLE', false);			// Use for testing if you want to dis
 define ('MAX_WIDTH', 1500);				// Maximum image width
 define ('MAX_HEIGHT', 1500);				// Maximum image height
 
-//Image compression options if you have pngcrush or optipng installed
-define ('OPTIPNG_ENABLED', false);			//optipng and pngcrush are the same speed when optipng uses -o1 which is what timthumb uses.
-define ('PNGCRUSH_ENABLED', false);			//On smaller images they are both fairly fast. On larger images they can take 2 seconds or more. 
-define ('OPTIPNG_PATH', '/usr/bin/optipng');		//So use these at your discretion. If you'd like detailed output on execution time and 
-define ('PNGCRUSH_PATH', '/usr/bin/pngcrush');		//how much they are compressing files, set DEBUG_ON = true and set DEBUG_LEVEL=1 or 3 for a lot more info.
-define ('SMUSHIT_ENABLED', false);			//Alpha feature, untested. Smushit is also frequently down, so don't rely on this.
+//Image compression is enabled if either of these point to valid paths
+define ('OPTIPNG_PATH', '/usr/bin/optipng'); //This will run first because it gives better compression than pngcrush. 
+define ('PNGCRUSH_PATH', '/usr/bin/pngcrush'); //This will only run if OPTIPNG_PATH is not set or is not valid
 
 /*
 	-------====Website Screenshots configuration - BETA====-------
@@ -103,6 +100,10 @@ $ALLOWED_SITES = array (
 		'picasa.com',
 		'img.youtube.com',
 		'upload.wikimedia.org',
+		'photobucket.com',
+		'imgur.com',
+		'imageshack.us',
+		'tinypic.com/'
 );
 // -------------------------------------------------------------
 // -------------- STOP EDITING CONFIGURATION HERE --------------
@@ -231,6 +232,7 @@ class timthumb {
 				$this->error("Could not find the internal image you specified.");
 				return false;
 			}
+			$this->debug(1, "Local image path is {$this->localImage}");
 			$this->localImageMTime = @filemtime($this->localImage);
 			//We include the mtime of the local file in case in changes on disk.
 			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . $this->localImageMTime . $_SERVER ['QUERY_STRING'] . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
@@ -670,9 +672,24 @@ class timthumb {
 			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
 
-		if(PNGCRUSH_ENABLED){
-			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
+		if( OPTIPNG_PATH && is_file(OPTIPNG_PATH)){
+			$exec = OPTIPNG_PATH;
+			$this->debug(3, "optipng'ing $tempfile");
+			$presize = filesize($tempfile);
+			$out = `$exec -o1 $tempfile`; //you can use up to -o7 but it really slows things down
+			clearstatcache();
+			$aftersize = filesize($tempfile);
+			$sizeDrop = $presize - $aftersize;
+			if($sizeDrop > 0){
+				$this->debug(1, "optipng reduced size by $sizeDrop");
+			} else if($sizeDrop < 0){
+				$this->debug(1, "optipng increased size! Difference was: $sizeDrop");
+			} else {
+				$this->debug(1, "optipng did not change image size.");
+			}
+		} else if(PNGCRUSH_PATH && is_file(PNGCRUSH_PATH)){
 			$exec = PNGCRUSH_PATH;
+			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 			$this->debug(3, "pngcrush'ing $tempfile to $tempfile2");
 			$out = `$exec $tempfile $tempfile2`;
 			$todel = "";
@@ -691,22 +708,6 @@ class timthumb {
 				$todel = $tempfile2;
 			}
 			@unlink($todel);
-		}
-		if(OPTIPNG_ENABLED){
-			$exec = OPTIPNG_PATH;
-			$this->debug(3, "optipng'ing $tempfile");
-			$presize = filesize($tempfile);
-			$out = `$exec -o1 $tempfile`; //you can use up to -o7 but it really slows things down
-			clearstatcache();
-			$aftersize = filesize($tempfile);
-			$sizeDrop = $presize - $aftersize;
-			if($sizeDrop > 0){
-				$this->debug(1, "optipng reduced size by $sizeDrop");
-			} else if($sizeDrop < 0){
-				$this->debug(1, "optipng increased size! Difference was: $sizeDrop");
-			} else {
-				$this->debug(1, "optipng did not change image size.");
-			}
 		}
 
 		$this->debug(3, "Rewriting image with security header.");
@@ -761,7 +762,6 @@ class timthumb {
 
 	}
 	protected function getLocalImagePath($src){
-		$this->debug(1, "Getting local image path for $src");
 		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
 
 		if(! $this->docRoot){
