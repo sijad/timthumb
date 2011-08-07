@@ -27,7 +27,7 @@ define ('FILE_CACHE_MAX_FILE_AGE', 86400);		// How old does a file have to be to
 define ('FILE_CACHE_SUFFIX', '.timthumb.txt');		// What to put at the end of all files in the cache directory so we can identify them
 define ('FILE_CACHE_DIRECTORY', './cache');		// Directory where images are cached. Left blank it will use the system temporary directory (which is better for security)
 define ('MAX_FILE_SIZE', 10485760);			// 10 Megs is 10485760. This is the max internal or external file size that we'll process.  
-define ('CURL_TIMEOUT', 10);				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
+define ('CURL_TIMEOUT', 20);				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
 define ('WAIT_BETWEEN_FETCH_ERRORS', 3600);		//Time to wait between errors fetching remote file
 //Browser caching
 define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
@@ -325,7 +325,7 @@ class timthumb {
 					//Fetching error occured previously
 					if(time() - @filemtime($this->cachefile) > WAIT_BETWEEN_FETCH_ERRORS){
 						$this->debug(3, "File is older than " . WAIT_BETWEEN_FETCH_ERRORS . " seconds. Deleting and returning false so app can try and load file.");
-						unlink($this->cachefile);
+						@unlink($this->cachefile);
 						return false; //to indicate we didn't serve from cache and app should try and load
 					} else {
 						$this->debug(3, "Empty cachefile is still fresh so returning message saying we had an error fetching this image from remote host.");
@@ -342,7 +342,7 @@ class timthumb {
 			} else {
 				$this->debug(3, "Failed to serve cachefile {$this->cachefile} - Deleting it from cache.");
 				//Image serving failed. We can't retry at this point, but lets remove it from cache so the next request recreates it
-				unlink($this->cachefile);
+				@unlink($this->cachefile);
 				return true;
 			}
 		}
@@ -716,7 +716,7 @@ class timthumb {
 		file_put_contents($tempfile4, $this->filePrependSecurityBlock . $imgType . ' ?' . '>'); //6 extra bytes, first 3 being image type 
 		file_put_contents($tempfile4, $fp, FILE_APPEND);
 		fclose($fp);
-		unlink($tempfile);
+		@unlink($tempfile);
 		$this->debug(3, "Locking and replacing cache file.");
 		$lockFile = $this->cachefile . '.lock';
 		$fh = fopen($lockFile, 'w');
@@ -728,11 +728,11 @@ class timthumb {
 			rename($tempfile4, $this->cachefile);
 			flock($fh, LOCK_UN);
 			fclose($fh);
-			unlink($lockFile);
+			@unlink($lockFile);
 		} else {
 			fclose($fh);
-			unlink($lockFile);
-			unlink($tempfile4);
+			@unlink($lockFile);
+			@unlink($tempfile4);
 			return $this->error("Could not get a lock for writing.");
 		}
 		$this->debug(3, "Done image replace with security header. Cleaning up and running cleanCache()");
@@ -862,7 +862,7 @@ class timthumb {
 		$this->toDelete($tempfile);
 		#fetch file here
 		if(! $this->getURL($this->src, $tempfile)){
-			unlink($this->cachefile);
+			@unlink($this->cachefile);
 			touch($this->cachefile);
 			$this->debug(3, "Error fetching URL: " . $this->lastURLError);
 			$this->error("Error reading the URL you specified from remote host." . $this->lastURLError);
@@ -905,7 +905,7 @@ class timthumb {
 		$imgType = fread($fp, 3);
 		fseek($fp, 3, SEEK_CUR);
 		if(ftell($fp) != strlen($this->filePrependSecurityBlock) + 6){
-			unlink($this->cachefile);
+			@unlink($this->cachefile);
 			return $this->error("The cached image file seems to be corrupt.");
 		}
 		$imageDataSize = filesize($this->cachefile) - (strlen($this->filePrependSecurityBlock) + 6);
