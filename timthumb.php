@@ -22,9 +22,8 @@ define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being 
 define ('ALLOW_EXTERNAL', TRUE);			// Allow image fetching from external websites. Will check against ALLOWED_SITES if ALLOW_ALL_EXTERNAL_SITES is false
 define ('ALLOW_ALL_EXTERNAL_SITES', FALSE);		// Less secure. 
 define ('FILE_CACHE_ENABLED', TRUE);			// Should we store resized/modified images on disk to speed things up?
-define ('FILE_CACHE_TIME_BETWEEN_CLEANS', 86400);	// Minimum time between checking if the cache needs cleaning
-define ('FILE_CACHE_SIZE', 1000);			// Number of files to store before clearing cache (once time betweeen cleans has elapsed)
-define ('FILE_CACHE_MAX_FILE_AGE', 86400);		// How old does a file have to be to be deleted from the cache
+define ('FILE_CACHE_TIME_BETWEEN_CLEANS', 10);	// How often the cache is cleaned 
+define ('FILE_CACHE_MAX_FILE_AGE', 10);		// How old does a file have to be to be deleted from the cache
 define ('FILE_CACHE_SUFFIX', '.timthumb.txt');		// What to put at the end of all files in the cache directory so we can identify them
 define ('FILE_CACHE_DIRECTORY', './cache');		// Directory where images are cached. Left blank it will use the system temporary directory (which is better for security)
 define ('MAX_FILE_SIZE', 10485760);			// 10 Megs is 10485760. This is the max internal or external file size that we'll process.  
@@ -167,6 +166,9 @@ class timthumb {
 		} else {
 			$this->cacheDirectory = sys_get_temp_dir();
 		}
+		//Clean the cache before we do anything because we don't want the first visitor after FILE_CACHE_TIME_BETWEEN_CLEANS expires to get a stale image. 
+		$this->cleanCache();
+		
 		$this->myHost = preg_replace('/^www\./i', '', $_SERVER['HTTP_HOST']);
 		$this->src = $this->param('src');
 		$this->url = parse_url($this->src);
@@ -398,26 +400,20 @@ class timthumb {
 			return;
 		}
 		if(@filemtime($lastCleanFile) < (time() - FILE_CACHE_TIME_BETWEEN_CLEANS) ){ //Cache was last cleaned more than 1 day ago
-			$this->debug(1, "Cache was last cleaned more than 1 day ago. Cleaning now.");
+			$this->debug(1, "Cache was last cleaned more than " . FILE_CACHE_TIME_BETWEEN_CLEANS . " seconds ago. Cleaning now.");
 			// Very slight race condition here, but worst case we'll have 2 or 3 servers cleaning the cache simultaneously once a day.
 			touch($lastCleanFile);
 			$files = glob($this->cacheDirectory . '/*' . FILE_CACHE_SUFFIX);
-			$this->debug(3, "Found " . sizeof($files) . " files in cache.");
-			if(sizeof($files) < FILE_CACHE_SIZE){
-				$this->debug(3, "Number of files is less than max. Not cleaning.");
-				return false;
-			}
-			$this->debug(3, "Number of files in cache exceeds max. Cleaning.");
 			$timeAgo = time() - FILE_CACHE_MAX_FILE_AGE;
 			foreach($files as $file){
 				if(@filemtime($file) < $timeAgo){
-					$this->debug(3, "Deleting cache file $file older than max age.");
+					$this->debug(3, "Deleting cache file $file older than max age: " . FILE_CACHE_MAX_FILE_AGE . " seconds");
 					@unlink($file);
 				}
 			}
 			return true;
 		} else {
-			$this->debug(3, "Cache was cleaned less than a day ago so no cleaning needed.");
+			$this->debug(3, "Cache was cleaned less than " . FILE_CACHE_TIME_BETWEEN_CLEANS . " seconds ago so no cleaning needed.");
 		}
 		return false;
 	}
@@ -739,7 +735,6 @@ class timthumb {
 		}
 		$this->debug(3, "Done image replace with security header. Cleaning up and running cleanCache()");
 		imagedestroy($canvas);
-		$this->cleanCache();
 		return true;
 	}
 	protected function getLocalImagePath($src){
