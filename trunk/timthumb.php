@@ -465,7 +465,7 @@ class timthumb {
 		$new_height = min ($new_height, MAX_HEIGHT);
 
 		// set memory limit to be able to have enough space to resize larger images
-		ini_set ('memory_limit', MEMORY_LIMIT);
+		$this->setMemoryLimit();
 
 		// open the existing image
 		$image = $this->openImage ($mimeType, $localImage);
@@ -1034,6 +1034,26 @@ class timthumb {
 			return $info['mime'];
 		}
 		return '';
+	}
+	protected function setMemoryLimit(){
+		$inimem = ini_get('memory_limit');
+		$inibytes = timthumb::returnBytes($inimem);
+		$ourbytes = timthumb::returnBytes(MEMORY_LIMIT);
+		if($inibytes < $ourbytes){
+			ini_set ('memory_limit', MEMORY_LIMIT);
+			$this->debug(3, "Increased memory from $inimem to " . MEMORY_LIMIT);
+		} else {
+			$this->debug(3, "Not adjusting memory size because the current setting is " . $inimem . " and our size of " . MEMORY_LIMIT . " is smaller.");
+		}
+	}
+	protected static function returnBytes($size_str){
+		switch (substr ($size_str, -1))
+		{
+			case 'M': case 'm': return (int)$size_str * 1048576;
+			case 'K': case 'k': return (int)$size_str * 1024;
+			case 'G': case 'g': return (int)$size_str * 1073741824;
+			default: return $size_str;
+		}
 	}
 }
 ?>
