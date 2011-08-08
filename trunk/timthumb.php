@@ -126,7 +126,6 @@ class timthumb {
 	protected $cacheDirectory = '';
 	protected $startTime = 0;
 	protected $lastBenchTime = 0;
-	protected $isOwnHost = false;
 	protected $cropTop = false;
 	protected $salt = "";
 	protected $fileCacheVersion = 1; //Generally if timthumb.php is modifed (upgraded) then the salt changes and all cache files are recreated. This is a backup mechanism to force regen.
@@ -193,7 +192,7 @@ class timthumb {
 			exit(0);
 		}
 		if(preg_match('/https?:\/\/(?:www\.)?' . $this->myHost . '(?:$|\/)/i', $this->src)){
-			$this->isOwnHost = true;
+			$this->src = preg_replace('/https?:\/\/(?:www\.)?' . $this->myHost . '/i', '', $this->src);
 		}
 		if(preg_match('/^https?:\/\/[^\/]+/i', $this->src)){
 			$this->debug(2, "Is a request for an external URL: " . $this->src);
@@ -206,8 +205,8 @@ class timthumb {
 			return false;
 		}
 		if($this->isURL){
-			if(ALLOW_ALL_EXTERNAL_SITES || $this->isOwnHost){
-				$this->debug(2, "Fetching from all external sites is enabled or this is our own server.");
+			if(ALLOW_ALL_EXTERNAL_SITES){
+				$this->debug(2, "Fetching from all external sites is enabled.");
 			} else {
 				$this->debug(2, "Fetching only from selected external sites is enabled.");
 				$allowed = false;
