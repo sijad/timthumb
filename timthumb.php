@@ -757,6 +757,7 @@ class timthumb {
 			} 
 		}
 		if($docRoot){ $docRoot = preg_replace('/\/$/', '', $docRoot); }
+		$docRoot = realpath($docRoot);
 		$this->debug(3, "Doc root is: " . $docRoot);
 		$this->docRoot = $docRoot;
 
