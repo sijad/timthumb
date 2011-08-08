@@ -757,7 +757,6 @@ class timthumb {
 			} 
 		}
 		if($docRoot){ $docRoot = preg_replace('/\/$/', '', $docRoot); }
-		$docRoot = realpath($docRoot);
 		$this->debug(3, "Doc root is: " . $docRoot);
 		$this->docRoot = $docRoot;
 
@@ -791,7 +790,7 @@ class timthumb {
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = realpath($base . $src);
-				if(strpos($real, $this->docRoot) !== 0){
+				if(strpos($real, realpath($this->docRoot)) !== 0){ //See issue 224. Using realpath as a windows fix.
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
 					return false;
 				}
