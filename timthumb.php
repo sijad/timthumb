@@ -763,7 +763,7 @@ class timthumb {
 	}
 	protected function getLocalImagePath($src){
 		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
-
+		$realDocRoot = realpath($this->docRoot);  //See issue 224. Using realpath as a windows fix.
 		if(! $this->docRoot){
 			$this->debug(3, "We have no document root set, so as a last resort, lets check if the image is in the current dir and serve that.");
 			//We don't support serving images outside the current dir if we don't have a doc root for security reasons.
@@ -772,16 +772,30 @@ class timthumb {
 				return realpath($file);
 			}
 			return $this->error("Could not find your website document root and the file specified doesn't exist in timthumbs directory. We don't support serving files outside timthumb's directory without a document root for security reasons.");
-		}
+		} //Do not go past this point without docRoot set
 
-		if (file_exists ($this->docRoot . '/' . $src)) {
+		//Try src under docRoot
+		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
 			$real = realpath($this->docRoot . '/' . $src);
-			if(strpos($real, $this->docRoot) !== 0){
+			if(strpos($real, $realDocRoot) === 0){
+				return $real;
+			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
-				return false;
+				//allow search to continue
 			}
-			return $real;
+		}
+		//Check absolute paths and then verify the real path is under doc root
+		$absolute = realpath('/' . $src);
+		if($absolute && file_exists($absolute)){ //realpath does file_exists check, so can probably skip the exists check here
+			$this->debug(3, "Found absolute path: $absolute");
+			if(! $this->docRoot){ $this->sanityFail("docRoot not set when checking absolute path."); }
+			if(strpos($absolute, $realDocRoot) === 0){
+				return $absolute;
+			} else {
+				$this->debug(1, "Security block: The file specified occurs outside the document root.");
+				//and continue search
+			}
 		}
 		$base = $this->docRoot;
 		foreach (explode('/', str_replace($this->docRoot, '', $_SERVER['SCRIPT_FILENAME'])) as $sub){
@@ -790,11 +804,12 @@ class timthumb {
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = realpath($base . $src);
-				if(strpos($real, realpath($this->docRoot)) !== 0){ //See issue 224. Using realpath as a windows fix.
+				if(strpos($real, $realDocRoot) === 0){ 
+					return $real;
+				} else {
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
-					return false;
+					//And continue search
 				}
-				return $real;
 			}
 		}
 		return false;
@@ -1002,7 +1017,7 @@ class timthumb {
 		}
 	}
 	protected function sanityFail($msg){
-		return $this->error("There is a problem in the timthumb code. Message: $msg Please report this error at <a href='http://code.google.com/p/timthumb/issues/list'>timthumb's bug tracking page</a>.");
+		return $this->error("There is a problem in the timthumb code. Message: Please report this error at <a href='http://code.google.com/p/timthumb/issues/list'>timthumb's bug tracking page</a>: $msg");
 	}
 	protected function getMimeType($file){
 		$info = getimagesize($file);
