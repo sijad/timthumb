@@ -103,7 +103,7 @@ $ALLOWED_SITES = array (
 		'photobucket.com',
 		'imgur.com',
 		'imageshack.us',
-		'tinypic.com/'
+		'tinypic.com'
 );
 // -------------------------------------------------------------
 // -------------- STOP EDITING CONFIGURATION HERE --------------
@@ -1050,8 +1050,8 @@ class timthumb {
 			curl_setopt ($curl, CURLOPT_HEADER, 0);
 			curl_setopt ($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 			curl_setopt ($curl, CURLOPT_WRITEFUNCTION, 'timthumb::curlWrite');
-			curl_setopt ($curl, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt ($curl, CURLOPT_MAXREDIRS, 10);
+			@curl_setopt ($curl, CURLOPT_FOLLOWLOCATION, true);
+			@curl_setopt ($curl, CURLOPT_MAXREDIRS, 10);
 			
 			$curlResult = curl_exec($curl);
 			fclose(self::$curlFH);
