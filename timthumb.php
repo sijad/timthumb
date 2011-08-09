@@ -435,7 +435,10 @@ class timthumb {
 		return false;
 	}
 	protected function processImageAndWriteToCache($localImage){
-		$mimeType = $this->getMimeType($localImage);
+		$sData = getimagesize($localImage);
+		$origType = $sData[2];
+		$mimeType = $sData['mime'];
+
 		$this->debug(3, "Mime type of image is $mimeType");
 		if(! preg_match('/^image\/(?:gif|jpg|jpeg|png)$/i', $mimeType)){
 			return $this->error("The image being resized is not a valid gif, jpg or png.");
@@ -668,6 +671,11 @@ class timthumb {
 			imageconvolution ($canvas, $sharpenMatrix, $divisor, $offset);
 
 		}
+		//Straight from Wordpress core code. Reduces filesize by up to 70% for PNG's
+		if ( IMAGETYPE_PNG == $origType && function_exists('imageistruecolor') && !imageistruecolor( $image ) ){
+			imagetruecolortopalette( $canvas, false, imagecolorstotal( $image ) );
+		}
+
 		$imgType = "";
 		$tempfile = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 		if(preg_match('/^image\/(?:jpg|jpeg)$/i', $mimeType)){ 
