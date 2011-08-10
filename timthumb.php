@@ -20,7 +20,7 @@
 	a new version of timthumb.
 
 */
-define ('VERSION', '2.5');										// Version of this script 
+define ('VERSION', '2.6');										// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below.
 if( file_exists('timthumb-config.php')) 	require_once('timthumb-config.php');
 if(! defined( 'DEBUG_ON' ) ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
@@ -48,7 +48,12 @@ if(! defined('MAX_WIDTH') ) 			define ('MAX_WIDTH', 1500);				// Maximum image w
 if(! defined('MAX_HEIGHT') ) 			define ('MAX_HEIGHT', 1500);				// Maximum image height
 
 //Image compression is enabled if either of these point to valid paths
+
+//These are now disabled by default because the file sizes of PNGs (and GIFs) are much smaller than we used to generate. 
+//They only work for PNGs. GIFs and JPEGs are not affected.
+if(! defined('OPTIPNG_ENABLED') ) 		define ('OPTIPNG_ENABLED', false);  
 if(! defined('OPTIPNG_PATH') ) 			define ('OPTIPNG_PATH', '/usr/bin/optipng'); //This will run first because it gives better compression than pngcrush. 
+if(! defined('PNGCRUSH_ENABLED') ) 		define ('PNGCRUSH_ENABLED', false); 
 if(! defined('PNGCRUSH_PATH') ) 		define ('PNGCRUSH_PATH', '/usr/bin/pngcrush'); //This will only run if OPTIPNG_PATH is not set or is not valid
 
 /*
@@ -672,7 +677,7 @@ class timthumb {
 
 		}
 		//Straight from Wordpress core code. Reduces filesize by up to 70% for PNG's
-		if ( IMAGETYPE_PNG == $origType && function_exists('imageistruecolor') && !imageistruecolor( $image ) ){
+		if ( (IMAGETYPE_PNG == $origType || IMAGETYPE_GIF == $origType) && function_exists('imageistruecolor') && !imageistruecolor( $image ) ){
 			imagetruecolortopalette( $canvas, false, imagecolorstotal( $image ) );
 		}
 
@@ -686,12 +691,12 @@ class timthumb {
 			imagepng($canvas, $tempfile, floor($quality * 0.09));
 		} else if(preg_match('/^image\/gif$/i', $mimeType)){
 			$imgType = 'gif';
-			imagepng($canvas, $tempfile, floor($quality * 0.09));
+			imagegif($canvas, $tempfile);
 		} else {
 			return $this->sanityFail("Could not match mime type after verifying it previously.");
 		}
 
-		if( OPTIPNG_PATH && @is_file(OPTIPNG_PATH)){
+		if($imgType == 'png' && OPTIPNG_ENABLED && OPTIPNG_PATH && @is_file(OPTIPNG_PATH)){
 			$exec = OPTIPNG_PATH;
 			$this->debug(3, "optipng'ing $tempfile");
 			$presize = filesize($tempfile);
@@ -706,7 +711,7 @@ class timthumb {
 			} else {
 				$this->debug(1, "optipng did not change image size.");
 			}
-		} else if(PNGCRUSH_PATH && @is_file(PNGCRUSH_PATH)){
+		} else if($imgType == 'png' && PNGCRUSH_ENABLED && PNGCRUSH_PATH && @is_file(PNGCRUSH_PATH)){
 			$exec = PNGCRUSH_PATH;
 			$tempfile2 = tempnam($this->cacheDirectory, 'timthumb_tmpimg_');
 			$this->debug(3, "pngcrush'ing $tempfile to $tempfile2");
