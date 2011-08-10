@@ -20,7 +20,7 @@
 	a new version of timthumb.
 
 */
-define ('VERSION', '2.6');										// Version of this script 
+define ('VERSION', '2.7');										// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below.
 if( file_exists('timthumb-config.php')) 	require_once('timthumb-config.php');
 if(! defined( 'DEBUG_ON' ) ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
@@ -43,9 +43,11 @@ if(! defined('WAIT_BETWEEN_FETCH_ERRORS') ) 	define ('WAIT_BETWEEN_FETCH_ERRORS'
 if(! defined('BROWSER_CACHE_MAX_AGE') ) 	define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
 if(! defined('BROWSER_CACHE_DISABLE') ) 	define ('BROWSER_CACHE_DISABLE', false);		// Use for testing if you want to disable all browser caching
 
-//Image size
+//Image size and defaults
 if(! defined('MAX_WIDTH') ) 			define ('MAX_WIDTH', 1500);				// Maximum image width
 if(! defined('MAX_HEIGHT') ) 			define ('MAX_HEIGHT', 1500);				// Maximum image height
+if(! defined('NOT_FOUND_IMAGE') )		define ('NOT_FOUND_IMAGE', '');				//Image to serve if any 404 occurs 
+if(! defined('ERROR_IMAGE') )			define ('ERROR_IMAGE', '');				//Image to serve if an error occurs instead of showing error message 
 
 //Image compression is enabled if either of these point to valid paths
 
@@ -100,7 +102,7 @@ if(! defined('WEBSHOT_SCREEN_X') ) 	define ('WEBSHOT_SCREEN_X', '1024');			//102
 if(! defined('WEBSHOT_SCREEN_Y') ) 	define ('WEBSHOT_SCREEN_Y', '768');			//768 works ok
 if(! defined('WEBSHOT_COLOR_DEPTH') ) 	define ('WEBSHOT_COLOR_DEPTH', '24');			//I haven't tested anything besides 24
 if(! defined('WEBSHOT_IMAGE_FORMAT') ) 	define ('WEBSHOT_IMAGE_FORMAT', 'png');			//png is about 2.5 times the size of jpg but is a LOT better quality
-if(! defined('WEBSHOT_TIMEOUT') ) 	define ('WEBSHOT_TIMEOUT', '300');			//Seconds to wait for a webshot
+if(! defined('WEBSHOT_TIMEOUT') ) 	define ('WEBSHOT_TIMEOUT', '20');			//Seconds to wait for a webshot
 if(! defined('WEBSHOT_USER_AGENT') ) 	define ('WEBSHOT_USER_AGENT', "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18"); //I hate to do this, but a non-browser robot user agent might not show what humans see. So we pretend to be Firefox
 if(! defined('WEBSHOT_JAVASCRIPT_ON') ) define ('WEBSHOT_JAVASCRIPT_ON', true);			//Setting to false might give you a slight speedup and block ads. But it could cause other issues.
 if(! defined('WEBSHOT_JAVA_ON') ) 	define ('WEBSHOT_JAVA_ON', false);			//Have only tested this as fase
@@ -130,6 +132,7 @@ timthumb::start();
 
 class timthumb {
 	protected $src = "";
+	protected $is404 = false;
 	protected $docRoot = "";
 	protected $lastURLError = false;
 	protected $localImage = "";
@@ -245,7 +248,9 @@ class timthumb {
 		} else {
 			$this->localImage = $this->getLocalImagePath($this->src);
 			if(! $this->localImage){
+				$this->debug(1, "Could not find the local image: {$this->localImage}");
 				$this->error("Could not find the internal image you specified.");
+				$this->set404();
 				return false;
 			}
 			$this->debug(1, "Local image path is {$this->localImage}");
@@ -281,6 +286,7 @@ class timthumb {
 			} else {
 				$this->debug(3, "webshot is NOT set so we're going to try to fetch a regular image.");
 				$this->serveExternalImage();
+
 			}
 		} else {
 			$this->debug(3, "Got request for internal image. Starting serveInternalImage()");
@@ -290,6 +296,21 @@ class timthumb {
 	}
 	protected function handleErrors(){
 		if($this->haveErrors()){ 
+			if(NOT_FOUND_IMAGE && $this->is404()){
+				if($this->serveImg(NOT_FOUND_IMAGE)){
+					exit(0);
+				} else {
+					$this->error("Additionally, the 404 image that is configured could not be found or there was an error serving it.");
+				}
+			}
+			if(ERROR_IMAGE){
+				if($this->serveImg(ERROR_IMAGE)){
+					exit(0);
+				} else {
+					$this->error("Additionally, the error image that is configured could not be found or there was an error serving it.");
+				}
+			}
+				
 			$this->serveErrors(); 
 			exit(0); 
 		}
@@ -347,6 +368,7 @@ class timthumb {
 						return false; //to indicate we didn't serve from cache and app should try and load
 					} else {
 						$this->debug(3, "Empty cachefile is still fresh so returning message saying we had an error fetching this image from remote host.");
+						$this->set404();
 						$this->error("An error occured fetching image.");
 						return false; 
 					}
@@ -881,6 +903,7 @@ class timthumb {
 		$out = `$command`;
 		$this->debug(3, "Received output: $out");
 		if(! is_file($tempfile)){
+			$this->set404();
 			return $this->error("The command to create a thumbnail failed.");
 		}
 		$this->cropTop = true;
@@ -996,7 +1019,7 @@ class timthumb {
 	}
 	protected function openImage($mimeType, $src){
 		switch ($mimeType) {
-			case 'image/jpg':
+			case 'image/jpg': //This isn't a valid mime type so we should probably remove it
 				$image = imagecreatefromjpeg ($src);
 				break;
 			case 'image/jpeg':
@@ -1094,7 +1117,10 @@ class timthumb {
 			
 			$curlResult = curl_exec($curl);
 			fclose(self::$curlFH);
-
+			$httpStatus = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+			if($httpStatus == 404){
+				$this->set404();
+			}
 			if($curlResult){
 				curl_close($curl);
 				return true;
@@ -1106,7 +1132,16 @@ class timthumb {
 		} else {
 			$img = @file_get_contents ($url);
 			if($img === false){
-				$this->lastURLError = error_get_last();
+				$err = error_get_last();
+				if(is_array($err) && $err['message']){
+					$this->lastURLError = $err['message'];
+				} else {
+					$this->lastURLError = $err;
+				}
+				if(preg_match('/404/', $this->lastURLError)){
+					$this->set404();
+				}
+
 				return false;
 			}
 			if(! file_put_contents($tempfile, $img)){
@@ -1116,6 +1151,33 @@ class timthumb {
 			return true;
 		}
 
+	}
+	protected function serveImg($file){
+		$s = getimagesize($file);
+		if(! ($s && $s['mime'])){
+			return false;
+		}
+		header ('Content-Type: ' . $s['mime']);
+		header ('Content-Length: ' . filesize($file) );
+		header ('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+		header ("Pragma: no-cache");
+		$bytes = @readfile($file);
+		if($bytes > 0){
+			return true;
+		}
+		$content = @file_get_contents ($file);
+		if ($content != FALSE){
+			echo $content;
+			return true;
+		}
+		return false;
+
+	}
+	protected function set404(){
+		$this->is404 = true;
+	}
+	protected function is404(){
+		return $this->is404;
 	}
 }
 ?>
