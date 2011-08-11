@@ -185,7 +185,6 @@ class timthumb {
 				}
 			}
 			$this->cacheDirectory = FILE_CACHE_DIRECTORY;
-			touch($this->cacheDirectory . '/index.php');
 			touch($this->cacheDirectory . '/index.html');
 		} else {
 			$this->cacheDirectory = sys_get_temp_dir();
