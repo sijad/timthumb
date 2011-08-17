@@ -20,7 +20,7 @@
 	a new version of timthumb.
 
 */
-define ('VERSION', '2.7');										// Version of this script 
+define ('VERSION', '2.8');										// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below.
 if( file_exists('timthumb-config.php')) 	require_once('timthumb-config.php');
 if(! defined( 'DEBUG_ON' ) ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
@@ -698,7 +698,7 @@ class timthumb {
 
 		}
 		//Straight from Wordpress core code. Reduces filesize by up to 70% for PNG's
-		if ( (IMAGETYPE_PNG == $origType || IMAGETYPE_GIF == $origType) && function_exists('imageistruecolor') && !imageistruecolor( $image ) ){
+		if ( (IMAGETYPE_PNG == $origType || IMAGETYPE_GIF == $origType) && function_exists('imageistruecolor') && !imageistruecolor( $image ) && imagecolortransparent( $image ) > 0 ){
 			imagetruecolortopalette( $canvas, false, imagecolorstotal( $image ) );
 		}
 
@@ -783,6 +783,7 @@ class timthumb {
 		}
 		$this->debug(3, "Done image replace with security header. Cleaning up and running cleanCache()");
 		imagedestroy($canvas);
+		imagedestroy($image);
 		return true;
 	}
 	protected function calcDocRoot(){
@@ -1025,8 +1026,6 @@ class timthumb {
 	protected function openImage($mimeType, $src){
 		switch ($mimeType) {
 			case 'image/jpg': //This isn't a valid mime type so we should probably remove it
-				$image = imagecreatefromjpeg ($src);
-				break;
 			case 'image/jpeg':
 				$image = imagecreatefromjpeg ($src);
 				break;
