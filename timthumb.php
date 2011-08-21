@@ -804,7 +804,7 @@ class timthumb {
 				$this->debug(3, "Generated docRoot using PATH_TRANSLATED and PHP_SELF as: $docRoot");
 			} 
 		}
-		if($docRoot){ $docRoot = preg_replace('/\/$/', '', $docRoot); }
+		if($docRoot && $_SERVER['DOCUMENT_ROOT'] != '/'){ $docRoot = preg_replace('/\/$/', '', $docRoot); }
 		$this->debug(3, "Doc root is: " . $docRoot);
 		$this->docRoot = $docRoot;
 
