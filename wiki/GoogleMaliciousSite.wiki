@@ -1,0 +1,17 @@
+If your site has been blocked by Google as Malicious then follow these steps to be relisted:
+
+==To prevent your site from being blocked do the following==
+
+  # Remove all old plugins and themes you aren’t using.
+  # Upgrade all your plugins and themes to the latest versions and make sure none of them use an old version of Timthumb.
+  # Clean any Timthumb cache directories.
+  # Upgrade your entire wordpress installation, even if it’s at the latest version. This overwrites all wordpress files.
+  # Search your directory tree for any remaining suspicious files that contain base64_decode wrapped in an eval() statement or URL encoded data. More info on how to do this search here. Delete any files you find. NOTE: If you don’t find any additional infected files in this step, it’s highly likely that your site is not clean. Every attack that I’ve seen so far using Timthumb gets in by uploading a file into the cache directory and then uploads an additional file into a writeable directory on the blog to ensure continued access once the cache is cleaned. Make sure you find that additional file.
+  # Make sure the only directory that is writeable in your wordpress installation is wp-content/. Directories like wp-admin and wp-includes should be read only by the web server.
+
+==To repair a blocked site==
+
+  # complete the steps above
+  # request a relisting through Google webmaster tools.  [http://www.google.com/support/webmasters/bin/answer.py?answer=168328 info on being relisted here]
+  # the process takes 24 hours to be cleaned.
+  # You can find out [http://25yearsofprogramming.com/blog/2009/20091124.htm more about Google’s Malware list and safe browsing report on this page.]
