@@ -15,3 +15,10 @@ If your site has been blocked by Google as Malicious then follow these steps to 
   # request a relisting through Google webmaster tools.  [http://www.google.com/support/webmasters/bin/answer.py?answer=168328 info on being relisted here]
   # the process takes 24 hours to be cleaned.
   # You can find out [http://25yearsofprogramming.com/blog/2009/20091124.htm more about Google’s Malware list and safe browsing report on this page.]
+
+==To upgrade TimThumb using FTP==
+
+  # open up your website in your favorite ftp application
+  # delete the *timthumb.php* file (may also be thumb.php, image.php or some other variation - if unsure please ask your webmaster/ theme provider for more information)
+  # download [http://timthumb.googlecode.com/svn/trunk/timthumb.php the latest timthumb.php] saving it with the name of the file you deleted previously - most likely timthumb.php
+  # upload the newly created file to your web space in the same location as the file(s) you deleted
