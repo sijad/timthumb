@@ -20,10 +20,10 @@
 	a new version of timthumb.
 
 */
-define ('VERSION', '2.8.1');										// Version of this script 
+define ('VERSION', '2.8.2');										// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
-if(! defined( 'DEBUG_ON' ) ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
+if(! defined('DEBUG_ON') ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
 if(! defined('DEBUG_LEVEL') ) 			define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
 if(! defined('MEMORY_LIMIT') ) 			define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
 if(! defined('BLOCK_EXTERNAL_LEECHERS') ) 	define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being loaded on an external site, display a red "No Hotlinking" gif.
@@ -114,14 +114,14 @@ if(! defined('WEBSHOT_XVFB_RUNNING') )	define ('WEBSHOT_XVFB_RUNNING', false);		
 // If ALLOW_EXTERNAL is true and ALLOW_ALL_EXTERNAL_SITES is false, then external images will only be fetched from these domains and their subdomains. 
 if(! isset($ALLOWED_SITES)){
 	$ALLOWED_SITES = array (
-			'flickr.com',
-			'picasa.com',
-			'img.youtube.com',
-			'upload.wikimedia.org',
-			'photobucket.com',
-			'imgur.com',
-			'imageshack.us',
-			'tinypic.com'
+		'flickr.com',
+		'picasa.com',
+		'img.youtube.com',
+		'upload.wikimedia.org',
+		'photobucket.com',
+		'imgur.com',
+		'imageshack.us',
+		'tinypic.com',
 	);
 }
 // -------------------------------------------------------------
@@ -235,7 +235,7 @@ class timthumb {
 				$this->debug(2, "Fetching only from selected external sites is enabled.");
 				$allowed = false;
 				foreach($ALLOWED_SITES as $site){
-					if (preg_match ('/(?:^|\.)' . $site . '$/i', $this->url['host'])) {
+					if ((strtolower(substr($this->url['host'],-strlen($site)-1)) === strtolower(".$site")) || (strtolower($this->url['host'])===strtolower($site))) {
 						$this->debug(3, "URL hostname {$this->url['host']} matches $site so allowing.");
 						$allowed = true;
 					}
