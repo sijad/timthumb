@@ -20,13 +20,18 @@
 	a new version of timthumb.
 
 */
-define ('VERSION', '2.8.2');										// Version of this script 
+define ('VERSION', '2.8.3');										// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
-if(! defined('DEBUG_ON') ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
-if(! defined('DEBUG_LEVEL') ) 			define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
-if(! defined('MEMORY_LIMIT') ) 			define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
+if(! defined('DEBUG_ON') )				define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
+if(! defined('DEBUG_LEVEL') )			define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
+if(! defined('MEMORY_LIMIT') )			define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
 if(! defined('BLOCK_EXTERNAL_LEECHERS') ) 	define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being loaded on an external site, display a red "No Hotlinking" gif.
+
+//Default values
+if(! defined('DEFAULT_ZC') )			define ('DEFAULT_ZC', 1);				// Default value for the zoom/crop setting
+if(! defined('DEFAULT_CC') )			define ('DEFAULT_CC', 'ffffff');		// Default border colour for use when resizing images
+if(! defined('DEFAULT_Q') )				define ('DEFAULT_Q', 90);				// Default quality value
 
 //Image fetching and caching
 if(! defined('ALLOW_EXTERNAL') ) 		define ('ALLOW_EXTERNAL', TRUE);			// Allow image fetching from external websites. Will check against ALLOWED_SITES if ALLOW_ALL_EXTERNAL_SITES is false
@@ -38,10 +43,10 @@ if(! defined('FILE_CACHE_SUFFIX') ) 		define ('FILE_CACHE_SUFFIX', '.timthumb.tx
 if(! defined('FILE_CACHE_DIRECTORY') ) 		define ('FILE_CACHE_DIRECTORY', './cache');		// Directory where images are cached. Left blank it will use the system temporary directory (which is better for security)
 if(! defined('MAX_FILE_SIZE') ) 		define ('MAX_FILE_SIZE', 10485760);			// 10 Megs is 10485760. This is the max internal or external file size that we'll process.  
 if(! defined('CURL_TIMEOUT') ) 			define ('CURL_TIMEOUT', 20);				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
-if(! defined('WAIT_BETWEEN_FETCH_ERRORS') ) 	define ('WAIT_BETWEEN_FETCH_ERRORS', 3600);		//Time to wait between errors fetching remote file
+if(! defined('WAIT_BETWEEN_FETCH_ERRORS') )	define ('WAIT_BETWEEN_FETCH_ERRORS', 3600);		//Time to wait between errors fetching remote file
 //Browser caching
-if(! defined('BROWSER_CACHE_MAX_AGE') ) 	define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
-if(! defined('BROWSER_CACHE_DISABLE') ) 	define ('BROWSER_CACHE_DISABLE', false);		// Use for testing if you want to disable all browser caching
+if(! defined('BROWSER_CACHE_MAX_AGE') ) define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
+if(! defined('BROWSER_CACHE_DISABLE') ) define ('BROWSER_CACHE_DISABLE', false);		// Use for testing if you want to disable all browser caching
 
 //Image size and defaults
 if(! defined('MAX_WIDTH') ) 			define ('MAX_WIDTH', 1500);				// Maximum image width
@@ -502,12 +507,12 @@ class timthumb {
 		// get standard input properties
 		$new_width =  (int) abs ($this->param('w', 0));
 		$new_height = (int) abs ($this->param('h', 0));
-		$zoom_crop = (int) $this->param('zc', 1);
-		$quality = (int) abs ($this->param('q', 90));
+		$zoom_crop = (int) $this->param('zc', DEFAULT_ZC);
+		$quality = (int) abs ($this->param('q', DEFAULT_Q));
 		$align = $this->cropTop ? 't' : $this->param('a', 'c');
 		$filters = $this->param('f', '');
 		$sharpen = (bool) $this->param('s', 0);
-		$canvas_color = $this->param('cc', 'ffffff');
+		$canvas_color = $this->param('cc', DEFAULT_CC);
 
 		// set default width and height if neither are set already
 		if ($new_width == 0 && $new_height == 0) {
