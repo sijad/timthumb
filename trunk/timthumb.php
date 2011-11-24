@@ -253,7 +253,9 @@ class timthumb {
 
 		$cachePrefix = ($this->isURL ? 'timthumb_ext_' : 'timthumb_int_');
 		if($this->isURL){
-			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . $_SERVER ['QUERY_STRING'] . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
+			$arr = explode('&', $_SERVER ['QUERY_STRING']);
+			asort($arr);
+			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . implode('', $arr) . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
 		} else {
 			$this->localImage = $this->getLocalImagePath($this->src);
 			if(! $this->localImage){
@@ -461,6 +463,7 @@ class timthumb {
 				$this->error("Could note create cache clean timestamp file.");
 			}
 			$files = glob($this->cacheDirectory . '/*' . FILE_CACHE_SUFFIX);
+			// timeAge = current time - number seconds
 			$timeAgo = time() - FILE_CACHE_MAX_FILE_AGE;
 			foreach($files as $file){
 				if(@filemtime($file) < $timeAgo){
@@ -881,6 +884,12 @@ class timthumb {
 				}
 			}
 		}
+		
+		$img = $this->docRoot . '/' . $src; 
+		if (file_exists($img)) {
+			return $img;
+		}
+
 		return false;
 	}
 	protected function toDelete($name){
