@@ -439,6 +439,9 @@ class timthumb {
 		}
 	}
 	protected function cleanCache(){
+		if (FILE_CACHE_TIME_BETWEEN_CLEANS < 0) {
+			return;
+		}
 		$this->debug(3, "cleanCache() called");
 		$lastCleanFile = $this->cacheDirectory . '/timthumb_cacheLastCleanTime.touch';
 		
