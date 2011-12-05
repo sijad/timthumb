@@ -12,7 +12,7 @@
  */
 
 /*
-	-----TimThumb CONFIGURATION-----
+	--- TimThumb CONFIGURATION ---
 	You can either edit the configuration variables manually here, or you can 
 	create a file called timthumb-config.php and define variables you want
 	to customize in there. It will automatically be loaded by timthumb.
@@ -20,18 +20,13 @@
 	a new version of timthumb.
 
 */
-define ('VERSION', '2.8.3');										// Version of this script 
+define ('VERSION', '2.8.2');										// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
-if(! defined('DEBUG_ON') )				define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
-if(! defined('DEBUG_LEVEL') )			define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
-if(! defined('MEMORY_LIMIT') )			define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
+if(! defined('DEBUG_ON') ) 			define ('DEBUG_ON', false);				// Enable debug logging to web server error log (STDERR)
+if(! defined('DEBUG_LEVEL') ) 			define ('DEBUG_LEVEL', 1);				// Debug level 1 is less noisy and 3 is the most noisy
+if(! defined('MEMORY_LIMIT') ) 			define ('MEMORY_LIMIT', '30M');				// Set PHP memory limit
 if(! defined('BLOCK_EXTERNAL_LEECHERS') ) 	define ('BLOCK_EXTERNAL_LEECHERS', false);		// If the image or webshot is being loaded on an external site, display a red "No Hotlinking" gif.
-
-//Default values
-if(! defined('DEFAULT_ZC') )			define ('DEFAULT_ZC', 1);				// Default value for the zoom/crop setting
-if(! defined('DEFAULT_CC') )			define ('DEFAULT_CC', 'ffffff');		// Default border colour for use when resizing images
-if(! defined('DEFAULT_Q') )				define ('DEFAULT_Q', 90);				// Default quality value
 
 //Image fetching and caching
 if(! defined('ALLOW_EXTERNAL') ) 		define ('ALLOW_EXTERNAL', TRUE);			// Allow image fetching from external websites. Will check against ALLOWED_SITES if ALLOW_ALL_EXTERNAL_SITES is false
@@ -43,10 +38,10 @@ if(! defined('FILE_CACHE_SUFFIX') ) 		define ('FILE_CACHE_SUFFIX', '.timthumb.tx
 if(! defined('FILE_CACHE_DIRECTORY') ) 		define ('FILE_CACHE_DIRECTORY', './cache');		// Directory where images are cached. Left blank it will use the system temporary directory (which is better for security)
 if(! defined('MAX_FILE_SIZE') ) 		define ('MAX_FILE_SIZE', 10485760);			// 10 Megs is 10485760. This is the max internal or external file size that we'll process.  
 if(! defined('CURL_TIMEOUT') ) 			define ('CURL_TIMEOUT', 20);				// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
-if(! defined('WAIT_BETWEEN_FETCH_ERRORS') )	define ('WAIT_BETWEEN_FETCH_ERRORS', 3600);		//Time to wait between errors fetching remote file
+if(! defined('WAIT_BETWEEN_FETCH_ERRORS') ) 	define ('WAIT_BETWEEN_FETCH_ERRORS', 3600);		//Time to wait between errors fetching remote file
 //Browser caching
-if(! defined('BROWSER_CACHE_MAX_AGE') ) define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
-if(! defined('BROWSER_CACHE_DISABLE') ) define ('BROWSER_CACHE_DISABLE', false);		// Use for testing if you want to disable all browser caching
+if(! defined('BROWSER_CACHE_MAX_AGE') ) 	define ('BROWSER_CACHE_MAX_AGE', 864000);		// Time to cache in the browser
+if(! defined('BROWSER_CACHE_DISABLE') ) 	define ('BROWSER_CACHE_DISABLE', false);		// Use for testing if you want to disable all browser caching
 
 //Image size and defaults
 if(! defined('MAX_WIDTH') ) 			define ('MAX_WIDTH', 1500);				// Maximum image width
@@ -120,6 +115,7 @@ if(! defined('WEBSHOT_XVFB_RUNNING') )	define ('WEBSHOT_XVFB_RUNNING', false);		
 if(! isset($ALLOWED_SITES)){
 	$ALLOWED_SITES = array (
 		'flickr.com',
+		'staticflickr.com',
 		'picasa.com',
 		'img.youtube.com',
 		'upload.wikimedia.org',
@@ -253,9 +249,7 @@ class timthumb {
 
 		$cachePrefix = ($this->isURL ? 'timthumb_ext_' : 'timthumb_int_');
 		if($this->isURL){
-			$arr = explode('&', $_SERVER ['QUERY_STRING']);
-			asort($arr);
-			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . implode('', $arr) . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
+			$this->cachefile = $this->cacheDirectory . '/' . $cachePrefix . md5($this->salt . $_SERVER ['QUERY_STRING'] . $this->fileCacheVersion) . FILE_CACHE_SUFFIX;
 		} else {
 			$this->localImage = $this->getLocalImagePath($this->src);
 			if(! $this->localImage){
@@ -463,7 +457,6 @@ class timthumb {
 				$this->error("Could note create cache clean timestamp file.");
 			}
 			$files = glob($this->cacheDirectory . '/*' . FILE_CACHE_SUFFIX);
-			// timeAge = current time - number seconds
 			$timeAgo = time() - FILE_CACHE_MAX_FILE_AGE;
 			foreach($files as $file){
 				if(@filemtime($file) < $timeAgo){
@@ -510,12 +503,12 @@ class timthumb {
 		// get standard input properties
 		$new_width =  (int) abs ($this->param('w', 0));
 		$new_height = (int) abs ($this->param('h', 0));
-		$zoom_crop = (int) $this->param('zc', DEFAULT_ZC);
-		$quality = (int) abs ($this->param('q', DEFAULT_Q));
+		$zoom_crop = (int) $this->param('zc', 1);
+		$quality = (int) abs ($this->param('q', 90));
 		$align = $this->cropTop ? 't' : $this->param('a', 'c');
 		$filters = $this->param('f', '');
 		$sharpen = (bool) $this->param('s', 0);
-		$canvas_color = $this->param('cc', DEFAULT_CC);
+		$canvas_color = $this->param('cc', 'ffffff');
 
 		// set default width and height if neither are set already
 		if ($new_width == 0 && $new_height == 0) {
@@ -826,7 +819,6 @@ class timthumb {
 	}
 	protected function getLocalImagePath($src){
 		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
-		$realDocRoot = realpath($this->docRoot);
 		if(! $this->docRoot){
 			$this->debug(3, "We have no document root set, so as a last resort, lets check if the image is in the current dir and serve that.");
 			//We don't support serving images outside the current dir if we don't have a doc root for security reasons.
@@ -841,7 +833,7 @@ class timthumb {
 		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
 			$real = realpath($this->docRoot . '/' . $src);
-			if(stripos($real, $realDocRoot) === 0){
+			if(stripos($real, $this->docRoot) === 0){
 				return $real;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -853,7 +845,7 @@ class timthumb {
 		if($absolute && file_exists($absolute)){ //realpath does file_exists check, so can probably skip the exists check here
 			$this->debug(3, "Found absolute path: $absolute");
 			if(! $this->docRoot){ $this->sanityFail("docRoot not set when checking absolute path."); }
-			if(stripos($absolute, $realDocRoot) === 0){
+			if(stripos($absolute, $this->docRoot) === 0){
 				return $absolute;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -876,7 +868,7 @@ class timthumb {
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = realpath($base . $src);
-				if(stripos($real, $realDocRoot) === 0){ 
+				if(stripos($real, $this->docRoot) === 0){ 
 					return $real;
 				} else {
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -884,12 +876,6 @@ class timthumb {
 				}
 			}
 		}
-		
-		$img = $this->docRoot . '/' . $src; 
-		if (file_exists($img)) {
-			return $img;
-		}
-
 		return false;
 	}
 	protected function toDelete($name){
