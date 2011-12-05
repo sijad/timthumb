@@ -798,6 +798,9 @@ class timthumb {
 	}
 	protected function calcDocRoot(){
 		$docRoot = @$_SERVER['DOCUMENT_ROOT'];
+		if (defined('LOCAL_FILE_BASE_DIRECTORY')) {
+			$docRoot = LOCAL_FILE_BASE_DIRECTORY;   
+		}
 		if(!isset($docRoot)){ 
 			$this->debug(3, "DOCUMENT_ROOT is not set. This is probably windows. Starting search 1.");
 			if(isset($_SERVER['SCRIPT_FILENAME'])){
