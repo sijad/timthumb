@@ -46,11 +46,11 @@ if(! defined('MAX_WIDTH') ) 			define ('MAX_WIDTH', 1500);									// Maximum im
 if(! defined('MAX_HEIGHT') ) 			define ('MAX_HEIGHT', 1500);								// Maximum image height
 if(! defined('NOT_FOUND_IMAGE') )		define ('NOT_FOUND_IMAGE', '');								// Image to serve if any 404 occurs 
 if(! defined('ERROR_IMAGE') )			define ('ERROR_IMAGE', '');									// Image to serve if an error occurs instead of showing error message 
-if(! defined('DEFAULT_QUALITY') )		define ('DEFAULT_QUALITY', 90);								// Default image quality. Allows overrid in timthumb-config.php
+if(! defined('DEFAULT_Q') )				define ('DEFAULT_Q', 90);									// Default image quality. Allows overrid in timthumb-config.php
 if(! defined('DEFAULT_ZC') )			define ('DEFAULT_ZC', 1);									// Default zoom/crop setting. Allows overrid in timthumb-config.php
-if(! defined('DEFAULT_FILTERS') )		define ('DEFAULT_FILTERS', '');								// Default image filters. Allows overrid in timthumb-config.php
-if(! defined('DEFAULT_SHARPEN') )		define ('DEFAULT_SHARPEN', 0);								// Default sharpen value. Allows overrid in timthumb-config.php
-if(! defined('DEFAULT_CANVAS_COLOR') )	define ('DEFAULT_CANVAS_COLOR', 'ffffff');					// Default canvas colour. Allows overrid in timthumb-config.php
+if(! defined('DEFAULT_F') )				define ('DEFAULT_F', '');									// Default image filters. Allows overrid in timthumb-config.php
+if(! defined('DEFAULT_S') )				define ('DEFAULT_S', 0);									// Default sharpen value. Allows overrid in timthumb-config.php
+if(! defined('DEFAULT_CC') )			define ('DEFAULT_CC', 'ffffff');							// Default canvas colour. Allows overrid in timthumb-config.php
 
 
 //Image compression is enabled if either of these point to valid paths
@@ -511,11 +511,11 @@ class timthumb {
 		$new_width =  (int) abs ($this->param('w', 0));
 		$new_height = (int) abs ($this->param('h', 0));
 		$zoom_crop = (int) $this->param('zc', DEFAULT_ZC);
-		$quality = (int) abs ($this->param('q', DEFAULT_QUALITY));
+		$quality = (int) abs ($this->param('q', DEFAULT_Q));
 		$align = $this->cropTop ? 't' : $this->param('a', 'c');
-		$filters = $this->param('f', DEFAULT_FILTERS);
-		$sharpen = (bool) $this->param('s', DEFAULT_SHARPEN);
-		$canvas_color = $this->param('cc', DEFAULT_CANVAS_COLOR);
+		$filters = $this->param('f', DEFAULT_F);
+		$sharpen = (bool) $this->param('s', DEFAULT_S);
+		$canvas_color = $this->param('cc', DEFAULT_CC);
 
 		// set default width and height if neither are set already
 		if ($new_width == 0 && $new_height == 0) {
