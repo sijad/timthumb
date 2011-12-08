@@ -843,7 +843,7 @@ class timthumb {
 		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
 			$real = realpath($this->docRoot . '/' . $src);
-			if(stripos($real, $this->docRoot) === 0){
+			if(stripos($real, $this->docRoot) == 0){
 				return $real;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -855,7 +855,7 @@ class timthumb {
 		if($absolute && file_exists($absolute)){ //realpath does file_exists check, so can probably skip the exists check here
 			$this->debug(3, "Found absolute path: $absolute");
 			if(! $this->docRoot){ $this->sanityFail("docRoot not set when checking absolute path."); }
-			if(stripos($absolute, $this->docRoot) === 0){
+			if(stripos($absolute, $this->docRoot) == 0){
 				return $absolute;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -878,7 +878,7 @@ class timthumb {
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = realpath($base . $src);
-				if(stripos($real, $this->docRoot) === 0){ 
+				if(stripos($real, $this->docRoot) == 0){ 
 					return $real;
 				} else {
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
