@@ -18,7 +18,7 @@
  * loaded by timthumb. This will save you having to re-edit these variables
  * everytime you download a new version
 */
-define ('VERSION', '2.8.3');																		// Version of this script 
+define ('VERSION', '2.8.3.$Rev$');																		// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
 if(! defined('DEBUG_ON') ) 			define ('DEBUG_ON', false);										// Enable debug logging to web server error log (STDERR)
