@@ -197,7 +197,7 @@ class timthumb {
 			}
 			$this->cacheDirectory = FILE_CACHE_DIRECTORY;
 			if (!touch($this->cacheDirectory . '/index.html')) {
-				$this->error("Could note create the index.html file.");
+				$this->error("Could note create the index.html file - to fix this create an empty file named index.html file in the cache directory.");
 			}
 		} else {
 			$this->cacheDirectory = sys_get_temp_dir();
