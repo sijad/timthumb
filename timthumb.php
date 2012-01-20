@@ -1060,7 +1060,6 @@ class timthumb {
 	}
 	protected function openImage($mimeType, $src){
 		switch ($mimeType) {
-			case 'image/jpg': //This isn't a valid mime type so we should probably remove it
 			case 'image/jpeg':
 				$image = imagecreatefromjpeg ($src);
 				break;
@@ -1072,6 +1071,9 @@ class timthumb {
 			case 'image/gif':
 				$image = imagecreatefromgif ($src);
 				break;
+			
+			default:
+				$this->error("Unrecognised mimeType");
 		}
 
 		return $image;
