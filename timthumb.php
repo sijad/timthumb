@@ -471,11 +471,13 @@ class timthumb {
 				$this->error("Could note create cache clean timestamp file.");
 			}
 			$files = glob($this->cacheDirectory . '/*' . FILE_CACHE_SUFFIX);
-			$timeAgo = time() - FILE_CACHE_MAX_FILE_AGE;
-			foreach($files as $file){
-				if(@filemtime($file) < $timeAgo){
-					$this->debug(3, "Deleting cache file $file older than max age: " . FILE_CACHE_MAX_FILE_AGE . " seconds");
-					@unlink($file);
+			if ($files) {
+				$timeAgo = time() - FILE_CACHE_MAX_FILE_AGE;
+				foreach($files as $file){
+					if(@filemtime($file) < $timeAgo){
+						$this->debug(3, "Deleting cache file $file older than max age: " . FILE_CACHE_MAX_FILE_AGE . " seconds");
+						@unlink($file);
+					}
 				}
 			}
 			return true;
