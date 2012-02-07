@@ -197,7 +197,7 @@ class timthumb {
 			}
 			$this->cacheDirectory = FILE_CACHE_DIRECTORY;
 			if (!touch($this->cacheDirectory . '/index.html')) {
-				$this->error("Could note create the index.html file - to fix this create an empty file named index.html file in the cache directory.");
+				$this->error("Could not create the index.html file - to fix this create an empty file named index.html file in the cache directory.");
 			}
 		} else {
 			$this->cacheDirectory = sys_get_temp_dir();
@@ -460,7 +460,7 @@ class timthumb {
 		if(! is_file($lastCleanFile)){
 			$this->debug(1, "File tracking last clean doesn't exist. Creating $lastCleanFile");
 			if (!touch($lastCleanFile)) {
-				$this->error("Could note create cache clean timestamp file.");
+				$this->error("Could not create cache clean timestamp file.");
 			}
 			return;
 		}
@@ -468,7 +468,7 @@ class timthumb {
 			$this->debug(1, "Cache was last cleaned more than " . FILE_CACHE_TIME_BETWEEN_CLEANS . " seconds ago. Cleaning now.");
 			// Very slight race condition here, but worst case we'll have 2 or 3 servers cleaning the cache simultaneously once a day.
 			if (!touch($lastCleanFile)) {
-				$this->error("Could note create cache clean timestamp file.");
+				$this->error("Could not create cache clean timestamp file.");
 			}
 			$files = glob($this->cacheDirectory . '/*' . FILE_CACHE_SUFFIX);
 			if ($files) {
