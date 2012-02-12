@@ -20,7 +20,7 @@
  * loaded by timthumb. This will save you having to re-edit these variables
  * everytime you download a new version
 */
-define ('VERSION', '2.8.6');																		// Version of this script 
+define ('VERSION', '2.8.7');																		// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
 if(! defined('DEBUG_ON') )					define ('DEBUG_ON', false);								// Enable debug logging to web server error log (STDERR)
@@ -36,7 +36,7 @@ if(! defined('FILE_CACHE_TIME_BETWEEN_CLEANS'))	define ('FILE_CACHE_TIME_BETWEEN
 
 if(! defined('FILE_CACHE_MAX_FILE_AGE') ) 	define ('FILE_CACHE_MAX_FILE_AGE', 86400);				// How old does a file have to be to be deleted from the cache
 if(! defined('FILE_CACHE_SUFFIX') ) 		define ('FILE_CACHE_SUFFIX', '.timthumb.txt');			// What to put at the end of all files in the cache directory so we can identify them
-if(! defined('FILE_CACHE_PREFIX') ) 		define ('FILE_CACHE_PREFIX', 'timthumb');				// What to put at the end of all files in the cache directory so we can identify them
+if(! defined('FILE_CACHE_PREFIX') ) 		define ('FILE_CACHE_PREFIX', 'timthumb');				// What to put at the beg of all files in the cache directory so we can identify them
 if(! defined('FILE_CACHE_DIRECTORY') ) 		define ('FILE_CACHE_DIRECTORY', './cache');				// Directory where images are cached. Left blank it will use the system temporary directory (which is better for security)
 if(! defined('MAX_FILE_SIZE') )				define ('MAX_FILE_SIZE', 10485760);						// 10 Megs is 10485760. This is the max internal or external file size that we'll process.  
 if(! defined('CURL_TIMEOUT') )				define ('CURL_TIMEOUT', 20);							// Timeout duration for Curl. This only applies if you have Curl installed and aren't using PHP's default URL fetching mechanism.
@@ -575,9 +575,11 @@ class timthumb {
 		$canvas = imagecreatetruecolor ($new_width, $new_height);
 		imagealphablending ($canvas, false);
 
-		if (strlen ($canvas_color) < 6) {
-			$canvas_color = 'ffffff';
-		}
+		if (strlen($canvas_color) == 3) { //if is 3-char notation, edit string into 6-char notation
+			$canvas_color =  str_repeat(substr($canvas_color, 0, 1), 2) . str_repeat(substr($canvas_color, 1, 1), 2) . str_repeat(substr($canvas_color, 2, 1), 2); 
+		} else if (strlen($canvas_color) != 6) {
+			$canvas_color = DEFAULT_CC; // on error return default canvas color
+ 		}
 
 		$canvas_color_R = hexdec (substr ($canvas_color, 0, 2));
 		$canvas_color_G = hexdec (substr ($canvas_color, 2, 2));
@@ -852,7 +854,7 @@ class timthumb {
 		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
 			$real = realpath($this->docRoot . '/' . $src);
-			if(stripos($real, $this->docRoot) == 0){
+			if(stripos($real, $this->docRoot) === 0){
 				return $real;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
