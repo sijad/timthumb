@@ -839,7 +839,7 @@ class timthumb {
 
 	}
 	protected function getLocalImagePath($src){
-		$src = preg_replace('/^\//', '', $src); //strip off the leading '/'
+		$src = ltrim($src, '/'); //strip off the leading '/'
 		if(! $this->docRoot){
 			$this->debug(3, "We have no document root set, so as a last resort, lets check if the image is in the current dir and serve that.");
 			//We don't support serving images outside the current dir if we don't have a doc root for security reasons.
@@ -854,7 +854,7 @@ class timthumb {
 		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
 			$real = realpath($this->docRoot . '/' . $src);
-			if(stripos($real, $this->docRoot) === 0){
+			if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, $this->docRoot)) === 0){
 				return $real;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -882,14 +882,14 @@ class timthumb {
 		} else {
 			$sub_directories = explode('/', str_replace($this->docRoot, '', $_SERVER['SCRIPT_FILENAME']));
 		}
-		
+
 		foreach ($sub_directories as $sub){
 			$base .= $sub . '/';
 			$this->debug(3, "Trying file as: " . $base . $src);
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = realpath($base . $src);
-				if(stripos($real, realpath($this->docRoot)) == 0){ 
+				if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, realpath($this->docRoot))) === 0){
 					return $real;
 				} else {
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
