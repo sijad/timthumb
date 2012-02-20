@@ -854,7 +854,7 @@ class timthumb {
 			//We don't support serving images outside the current dir if we don't have a doc root for security reasons.
 			$file = preg_replace('/^.*?([^\/\\\\]+)$/', '$1', $src); //strip off any path info and just leave the filename.
 			if(is_file($file)){
-				return realpath($file);
+				return $this->realpath($file);
 			}
 			return $this->error("Could not find your website document root and the file specified doesn't exist in timthumbs directory. We don't support serving files outside timthumb's directory without a document root for security reasons.");
 		} //Do not go past this point without docRoot set
@@ -862,7 +862,7 @@ class timthumb {
 		//Try src under docRoot
 		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
-			$real = realpath($this->docRoot . '/' . $src);
+			$real = $this->realpath($this->docRoot . '/' . $src);
 			if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, $this->docRoot)) === 0){
 				return $real;
 			} else {
@@ -871,7 +871,7 @@ class timthumb {
 			}
 		}
 		//Check absolute paths and then verify the real path is under doc root
-		$absolute = realpath('/' . $src);
+		$absolute = $this->realpath('/' . $src);
 		if($absolute && file_exists($absolute)){ //realpath does file_exists check, so can probably skip the exists check here
 			$this->debug(3, "Found absolute path: $absolute");
 			if(! $this->docRoot){ $this->sanityFail("docRoot not set when checking absolute path."); }
@@ -897,8 +897,8 @@ class timthumb {
 			$this->debug(3, "Trying file as: " . $base . $src);
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
-				$real = realpath($base . $src);
-				if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, realpath($this->docRoot))) === 0){
+				$real = $this->realpath($base . $src);
+				if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, $this->realpath($this->docRoot))) === 0){
 					return $real;
 				} else {
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -907,6 +907,16 @@ class timthumb {
 			}
 		}
 		return false;
+	}
+	protected function realpath($path){
+		//try to remove any relative paths
+		$remove_relatives = '/\w+\/\.\.\//';
+		while(preg_match($remove_relatives,$path)){
+		    $path = preg_replace($remove_relatives, '', $path);
+		}
+		//if any remain use PHP realpath to strip them out, otherwise return $path
+		//if using realpath, any symlinks will also be resolved
+		return preg_match('#^\.\./|/\.\./#', $path) ? realpath($path) : $path;
 	}
 	protected function toDelete($name){
 		$this->debug(3, "Scheduling file $name to delete on destruct.");
