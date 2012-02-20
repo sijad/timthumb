@@ -51,6 +51,7 @@ if(! defined('MAX_WIDTH') ) 			define ('MAX_WIDTH', 1500);									// Maximum im
 if(! defined('MAX_HEIGHT') ) 			define ('MAX_HEIGHT', 1500);								// Maximum image height
 if(! defined('NOT_FOUND_IMAGE') )		define ('NOT_FOUND_IMAGE', '');								// Image to serve if any 404 occurs 
 if(! defined('ERROR_IMAGE') )			define ('ERROR_IMAGE', '');									// Image to serve if an error occurs instead of showing error message 
+if(! defined('PNG_IS_TRANSPARENT') ) 	define ('PNG_IS_TRANSPARENT', FALSE);  //42 Define if a png image should have a transparent background color. Use False value if you want to display a custom coloured canvas_colour 
 if(! defined('DEFAULT_Q') )				define ('DEFAULT_Q', 90);									// Default image quality. Allows overrid in timthumb-config.php
 if(! defined('DEFAULT_ZC') )			define ('DEFAULT_ZC', 1);									// Default zoom/crop setting. Allows overrid in timthumb-config.php
 if(! defined('DEFAULT_F') )				define ('DEFAULT_F', '');									// Default image filters. Allows overrid in timthumb-config.php
@@ -326,7 +327,6 @@ class timthumb {
 					$this->error("Additionally, the error image that is configured could not be found or there was an error serving it.");
 				}
 			}
-				
 			$this->serveErrors(); 
 			exit(0); 
 		}
@@ -416,12 +416,12 @@ class timthumb {
 		return false;
 	}
 	protected function serveErrors(){
+		header ($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
 		$html = '<ul>';
 		foreach($this->errors as $err){
 			$html .= '<li>' . htmlentities($err) . '</li>';
 		}
 		$html .= '</ul>';
-		header ($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request');
 		echo '<h1>A TimThumb error has occured</h1>The following error(s) occured:<br />' . $html . '<br />';
 		echo '<br />Query String : ' . htmlentities ($_SERVER['QUERY_STRING']);
 		echo '<br />TimThumb version : ' . VERSION . '</pre>';
@@ -525,6 +525,7 @@ class timthumb {
 		$filters = $this->param('f', DEFAULT_F);
 		$sharpen = (bool) $this->param('s', DEFAULT_S);
 		$canvas_color = $this->param('cc', DEFAULT_CC);
+		$canvas_trans = (bool) $this->param('ct', '1');
 
 		// set default width and height if neither are set already
 		if ($new_width == 0 && $new_height == 0) {
@@ -586,7 +587,14 @@ class timthumb {
 		$canvas_color_B = hexdec (substr ($canvas_color, 4, 2));
 
 		// Create a new transparent color for image
-		$color = imagecolorallocatealpha ($canvas, $canvas_color_R, $canvas_color_G, $canvas_color_B, 127);
+	    // If is a png and PNG_IS_TRANSPARENT is false then remove the alpha transparency 
+		// (and if is set a canvas color show it in the background)
+		if(preg_match('/^image\/png$/i', $mimeType) && !PNG_IS_TRANSPARENT && $canvas_trans){ 
+			$color = imagecolorallocatealpha ($canvas, $canvas_color_R, $canvas_color_G, $canvas_color_B, 127);		
+		}else{
+			$color = imagecolorallocatealpha ($canvas, $canvas_color_R, $canvas_color_G, $canvas_color_B, 0);
+		}
+
 
 		// Completely fill the background of the new image with allocated color.
 		imagefill ($canvas, 0, 0, $color);
@@ -866,7 +874,7 @@ class timthumb {
 		if($absolute && file_exists($absolute)){ //realpath does file_exists check, so can probably skip the exists check here
 			$this->debug(3, "Found absolute path: $absolute");
 			if(! $this->docRoot){ $this->sanityFail("docRoot not set when checking absolute path."); }
-			if(stripos($absolute, $this->docRoot) == 0){
+			if(stripos($absolute, $this->docRoot) === 0){
 				return $absolute;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
