@@ -20,7 +20,7 @@
  * loaded by timthumb. This will save you having to re-edit these variables
  * everytime you download a new version
 */
-define ('VERSION', '2.8.8');																		// Version of this script 
+define ('VERSION', '2.8.9');																		// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
 if(! defined('DEBUG_ON') )					define ('DEBUG_ON', false);								// Enable debug logging to web server error log (STDERR)
@@ -863,7 +863,7 @@ class timthumb {
 		if(file_exists ($this->docRoot . '/' . $src)) {
 			$this->debug(3, "Found file as " . $this->docRoot . '/' . $src);
 			$real = $this->realpath($this->docRoot . '/' . $src);
-			if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, $this->docRoot)) === 0){
+			if(stripos($real, $this->docRoot) === 0){
 				return $real;
 			} else {
 				$this->debug(1, "Security block: The file specified occurs outside the document root.");
@@ -898,7 +898,7 @@ class timthumb {
 			if(file_exists($base . $src)){
 				$this->debug(3, "Found file as: " . $base . $src);
 				$real = $this->realpath($base . $src);
-				if(stripos($real, str_replace('/', DIRECTORY_SEPARATOR, $this->realpath($this->docRoot))) === 0){
+				if(stripos($real, $this->realpath($this->docRoot)) === 0){
 					return $real;
 				} else {
 					$this->debug(1, "Security block: The file specified occurs outside the document root.");
