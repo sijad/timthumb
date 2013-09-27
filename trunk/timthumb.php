@@ -20,7 +20,7 @@
  * loaded by timthumb. This will save you having to re-edit these variables
  * everytime you download a new version
 */
-define ('VERSION', '2.8.12');																		// Version of this script 
+define ('VERSION', '2.8.13');																		// Version of this script 
 //Load a config file if it exists. Otherwise, use the values below
 if( file_exists(dirname(__FILE__) . '/timthumb-config.php'))	require_once('timthumb-config.php');
 if(! defined('DEBUG_ON') )					define ('DEBUG_ON', false);								// Enable debug logging to web server error log (STDERR)
@@ -431,7 +431,7 @@ class timthumb {
 		}
 		$html .= '</ul>';
 		echo '<h1>A TimThumb error has occured</h1>The following error(s) occured:<br />' . $html . '<br />';
-		echo '<br />Query String : ' . htmlentities ($_SERVER['QUERY_STRING']);
+		echo '<br />Query String : ' . htmlentities( $_SERVER['QUERY_STRING'], ENT_QUOTES );
 		echo '<br />TimThumb version : ' . VERSION . '</pre>';
 	}
 	protected function serveInternalImage(){
